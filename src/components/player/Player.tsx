@@ -37,7 +37,7 @@ const MANA_TYPES: ManaType[] = [
   { symbol: 'B', color: 'black', display: '💀', bgClassName: 'bg-gradient-to-b from-neutral-100 to-neutral-200/70', iconColor: 'text-neutral-700' },
   { symbol: 'R', color: 'red', display: '🔥', bgClassName: 'bg-gradient-to-b from-red-50 to-red-100/70', iconColor: 'text-red-600' },
   { symbol: 'G', color: 'green', display: '🌳', bgClassName: 'bg-gradient-to-b from-green-50 to-green-100/70', iconColor: 'text-green-600' },
-  { symbol: 'C', color: 'colorless', display: '💎', bgClassName: 'bg-gradient-to-b from-purple-50 to-purple-100/70', iconColor: 'text-purple-600' }
+  { symbol: 'C', color: 'colorless', display: '💠', bgClassName: 'bg-gradient-to-b from-purple-50 to-purple-100/70', iconColor: 'text-purple-600' }
 ];
 
 const LAND_TYPES: LandType[] = [
@@ -337,69 +337,67 @@ const Player: React.FC<PlayerProps> = ({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="bg-card p-4 rounded-xl border border-border/40 mb-1.5 shadow-inner"
+                  className="flex flex-wrap gap-4 justify-center"
                 >
-                  <div className="flex flex-wrap gap-3 justify-center">
-                    {MANA_TYPES.map(mana => (
-                      <motion.div 
-                        key={mana.symbol}
-                        initial={{ scale: 0.95, opacity: 0.8 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        whileHover={{ scale: 1.03, y: -2 }}
-                        className={`flex flex-col items-center border-2 border-border/40 rounded-xl overflow-hidden ${mana.bgClassName} shadow-md min-w-[80px]`}
-                      >
-                        <div className="w-full text-center py-1.5 bg-background/10 backdrop-blur-sm border-b border-border/30">
-                          <span className="text-xl">{mana.display}</span>
+                  {MANA_TYPES.map(mana => (
+                    <motion.div 
+                      key={mana.symbol}
+                      initial={{ scale: 0.95, opacity: 0.8 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      whileHover={{ scale: 1.03, y: -2 }}
+                      className={`flex flex-col items-center border-2 border-border/40 rounded-xl overflow-hidden ${mana.bgClassName} shadow-md min-w-[100px]`}
+                    >
+                      <div className="w-full text-center py-2 bg-background/10 backdrop-blur-sm border-b border-border/30">
+                        <span className="text-2xl">{mana.display}</span>
+                      </div>
+                      <div className="py-3 flex-1 flex flex-col items-center justify-center w-full px-4">
+                        <motion.span 
+                          key={player.manaPool[mana.symbol as keyof typeof player.manaPool]}
+                          initial={{ scale: 1.2, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className={`font-bold text-3xl ${mana.iconColor}`}
+                        >
+                          {player.manaPool[mana.symbol as keyof typeof player.manaPool]}
+                        </motion.span>
+                        <div className="flex gap-2 mt-3 w-full">
+                          <motion.div whileTap={{ scale: 0.9 }}>
+                            <Button 
+                              variant="ghost"
+                              size="icon"
+                              className={`h-12 w-12 bg-destructive/20 hover:bg-destructive/30 text-destructive border border-destructive/20 hover:border-destructive/40 shadow-sm ${
+                                player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0 
+                                  ? 'opacity-50 cursor-not-allowed' 
+                                  : ''
+                              }`}
+                              onClick={() => decrementMana(mana.symbol)}
+                              disabled={player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0}
+                              title="Use mana"
+                            >
+                              <Minus className="h-5 w-5" />
+                            </Button>
+                          </motion.div>
+                          <motion.div whileTap={{ scale: 0.9 }}>
+                            <Button 
+                              variant="ghost"
+                              size="icon"
+                              className="h-12 w-12 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20 hover:border-primary/40 shadow-sm"
+                              onClick={() => incrementMana(mana.symbol)}
+                              title="Add mana"
+                            >
+                              <Plus className="h-5 w-5" />
+                            </Button>
+                          </motion.div>
                         </div>
-                        <div className="py-2 flex-1 flex flex-col items-center justify-center w-full px-3">
-                          <motion.span 
-                            key={player.manaPool[mana.symbol as keyof typeof player.manaPool]}
-                            initial={{ scale: 1.2, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className={`font-bold text-2xl ${mana.iconColor}`}
-                          >
-                            {player.manaPool[mana.symbol as keyof typeof player.manaPool]}
-                          </motion.span>
-                          <div className="flex gap-2 mt-2 w-full">
-                            <motion.div whileTap={{ scale: 0.9 }}>
-                              <Button 
-                                variant="ghost"
-                                size="icon"
-                                className={`h-10 w-10 bg-destructive/20 hover:bg-destructive/30 text-destructive border border-destructive/20 hover:border-destructive/40 shadow-sm ${
-                                  player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0 
-                                    ? 'opacity-50 cursor-not-allowed' 
-                                    : ''
-                                }`}
-                                onClick={() => decrementMana(mana.symbol)}
-                                disabled={player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0}
-                                title="Use mana"
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                            </motion.div>
-                            <motion.div whileTap={{ scale: 0.9 }}>
-                              <Button 
-                                variant="ghost"
-                                size="icon"
-                                className="h-10 w-10 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20 hover:border-primary/40 shadow-sm"
-                                onClick={() => incrementMana(mana.symbol)}
-                                title="Add mana"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </motion.div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                  
-                  <div className="mt-4 pt-2 border-t border-border/30 text-center text-xs text-muted-foreground">
-                    <p>Your mana pool is filled at the beginning of your turn based on your lands.</p>
-                  </div>
+                      </div>
+                    </motion.div>
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>
+            
+            <div className="mt-4 pt-2 border-t border-border/30 text-center text-xs text-muted-foreground">
+              <p>Your mana pool is filled at the beginning of your turn based on your lands.</p>
+            </div>
           </TabsContent>
           
           <TabsContent value="lands" className="mt-0 rounded-xl bg-card/50 backdrop-blur-sm pt-4 px-4 pb-3 border border-border/30 shadow-sm">
