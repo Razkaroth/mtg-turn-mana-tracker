@@ -228,16 +228,31 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Reset the game to initial state and clear saved game
   const resetGame = () => {
+    // Clear all game state
     setGameStarted(false);
-    setPlayers(createDefaultPlayers());
     setActivePlayerIndex(0);
     setDisplayedPlayerIndex(0);
     setTimerRunning(false);
     setIsSinglePlayerMode(false);
     setActualPlayerIndex(0);
     setIsPhantomPhase(false);
+    
+    // Clear localStorage
     localStorage.removeItem(GAME_STATE_KEY);
     setHasSavedGame(false);
+    
+    // Reset players in a single state update
+    setPlayers(prevPlayers => 
+      prevPlayers.map((player, index) => ({
+        id: index + 1,
+        name: `Player ${index + 1}`,
+        life: settings.startingLife,
+        lands: [],
+        manaPool: { ...defaultManaPool },
+        profileId: player.profileId,
+        isPhantom: false
+      }))
+    );
   };
 
   // End the current game and return to main menu (keeping the saved game)
