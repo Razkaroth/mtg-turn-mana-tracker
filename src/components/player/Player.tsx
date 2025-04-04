@@ -4,8 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Minus, X, Ghost, Edit, Droplet, Trash2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Plus, Minus, X, Ghost, Edit, Droplet, Trash2, Star } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ManaType {
   symbol: string;
@@ -32,21 +32,21 @@ interface PlayerProps {
 }
 
 const MANA_TYPES: ManaType[] = [
-  { symbol: 'W', color: 'white', display: '☀️', bgClassName: 'bg-amber-50', iconColor: 'text-amber-600' },
-  { symbol: 'U', color: 'blue', display: '💧', bgClassName: 'bg-blue-50', iconColor: 'text-blue-600' },
-  { symbol: 'B', color: 'black', display: '💀', bgClassName: 'bg-neutral-100', iconColor: 'text-neutral-600' },
-  { symbol: 'R', color: 'red', display: '🔥', bgClassName: 'bg-red-50', iconColor: 'text-red-600' },
-  { symbol: 'G', color: 'green', display: '🌳', bgClassName: 'bg-green-50', iconColor: 'text-green-600' },
-  { symbol: 'C', color: 'colorless', display: '💎', bgClassName: 'bg-purple-50', iconColor: 'text-purple-600' }
+  { symbol: 'W', color: 'white', display: '☀️', bgClassName: 'bg-gradient-to-b from-amber-50 to-amber-100/70', iconColor: 'text-amber-600' },
+  { symbol: 'U', color: 'blue', display: '💧', bgClassName: 'bg-gradient-to-b from-blue-50 to-blue-100/70', iconColor: 'text-blue-600' },
+  { symbol: 'B', color: 'black', display: '💀', bgClassName: 'bg-gradient-to-b from-neutral-100 to-neutral-200/70', iconColor: 'text-neutral-700' },
+  { symbol: 'R', color: 'red', display: '🔥', bgClassName: 'bg-gradient-to-b from-red-50 to-red-100/70', iconColor: 'text-red-600' },
+  { symbol: 'G', color: 'green', display: '🌳', bgClassName: 'bg-gradient-to-b from-green-50 to-green-100/70', iconColor: 'text-green-600' },
+  { symbol: 'C', color: 'colorless', display: '💎', bgClassName: 'bg-gradient-to-b from-purple-50 to-purple-100/70', iconColor: 'text-purple-600' }
 ];
 
 const LAND_TYPES: LandType[] = [
-  { type: 'Plains', produces: 'W', symbol: '☀️', bgClassName: 'bg-amber-50', iconColor: 'text-amber-600' },
-  { type: 'Island', produces: 'U', symbol: '💧', bgClassName: 'bg-blue-50', iconColor: 'text-blue-600' },
-  { type: 'Swamp', produces: 'B', symbol: '💀', bgClassName: 'bg-neutral-100', iconColor: 'text-neutral-600' },
-  { type: 'Mountain', produces: 'R', symbol: '🔥', bgClassName: 'bg-red-50', iconColor: 'text-red-600' },
-  { type: 'Forest', produces: 'G', symbol: '🌳', bgClassName: 'bg-green-50', iconColor: 'text-green-600' },
-  { type: 'Wastes', produces: 'C', symbol: '💎', bgClassName: 'bg-purple-50', iconColor: 'text-purple-600' }
+  { type: 'Plains', produces: 'W', symbol: '☀️', bgClassName: 'bg-gradient-to-b from-amber-50 to-amber-100/70', iconColor: 'text-amber-600' },
+  { type: 'Island', produces: 'U', symbol: '💧', bgClassName: 'bg-gradient-to-b from-blue-50 to-blue-100/70', iconColor: 'text-blue-600' },
+  { type: 'Swamp', produces: 'B', symbol: '💀', bgClassName: 'bg-gradient-to-b from-neutral-100 to-neutral-200/70', iconColor: 'text-neutral-700' },
+  { type: 'Mountain', produces: 'R', symbol: '🔥', bgClassName: 'bg-gradient-to-b from-red-50 to-red-100/70', iconColor: 'text-red-600' },
+  { type: 'Forest', produces: 'G', symbol: '🌳', bgClassName: 'bg-gradient-to-b from-green-50 to-green-100/70', iconColor: 'text-green-600' },
+  { type: 'Wastes', produces: 'C', symbol: '💎', bgClassName: 'bg-gradient-to-b from-purple-50 to-purple-100/70', iconColor: 'text-purple-600' }
 ];
 
 const Player: React.FC<PlayerProps> = ({ 
@@ -59,6 +59,7 @@ const Player: React.FC<PlayerProps> = ({
   const [nameEditing, setNameEditing] = useState<boolean>(false);
   const [newName, setNewName] = useState<string>(player.name);
   const [activeTab, setActiveTab] = useState<string>("mana");
+  const [tappedLandId, setTappedLandId] = useState<number | null>(null);
 
   const updateLife = (amount: number) => {
     onUpdate({ life: player.life + amount });
@@ -83,8 +84,14 @@ const Player: React.FC<PlayerProps> = ({
     // Find the first land of the specified type
     const landToRemove = player.lands.find(land => land.type === landType);
     if (landToRemove) {
-      // Remove that land
-      removeLand(landToRemove.id);
+      // Trigger visual effect
+      setTappedLandId(landToRemove.id);
+      
+      // Remove that land after a short delay for visual feedback
+      setTimeout(() => {
+        removeLand(landToRemove.id);
+        setTappedLandId(null);
+      }, 300);
     }
   };
 
@@ -93,6 +100,9 @@ const Player: React.FC<PlayerProps> = ({
     const land = player.lands.find(l => l.id === landId);
     if (!land) return;
 
+    // Trigger the animation
+    setTappedLandId(landId);
+    
     // If we're tapping the land (currently untapped), add mana to the pool
     if (!land.tapped) {
       const updatedManaPool = { ...player.manaPool };
@@ -119,6 +129,9 @@ const Player: React.FC<PlayerProps> = ({
         })
       });
     }
+    
+    // Reset the animation trigger after animation completes
+    setTimeout(() => setTappedLandId(null), 500);
   };
 
   const decrementMana = (manaType: string) => {
@@ -176,13 +189,13 @@ const Player: React.FC<PlayerProps> = ({
   }
 
   return (
-    <Card className={`mb-6 w-full overflow-hidden border transition-all duration-300 ${
+    <Card className={`mb-6 w-full overflow-hidden border-2 transition-all duration-300 ${
       isActive 
-        ? 'border-primary/40 shadow-md shadow-primary/10' 
-        : 'border-border/40'
+        ? 'border-primary/50 shadow-lg shadow-primary/10 bg-gradient-to-b from-background to-card/90' 
+        : 'border-border/50 shadow-md bg-gradient-to-b from-background to-muted/10'
     }`}>
-      <CardContent className="pt-4 px-4 pb-3">
-        <div className="flex justify-between items-center mb-4 group">
+      <CardContent className="pt-5 px-4 pb-4">
+        <div className="flex justify-between items-center mb-5 group relative">
           {nameEditing ? (
             <div className="w-full">
               <Input
@@ -191,17 +204,30 @@ const Player: React.FC<PlayerProps> = ({
                 onBlur={finishNameEdit}
                 onKeyDown={(e) => e.key === 'Enter' && finishNameEdit()}
                 autoFocus
-                className="h-8 border-primary/30 focus-visible:ring-primary/20"
+                className="h-9 border-primary/30 focus-visible:ring-primary/20 text-lg font-medium"
               />
             </div>
           ) : (
-            <h2 
+            <motion.h2 
               onClick={() => setNameEditing(true)}
-              className="text-lg font-bold cursor-pointer hover:text-primary transition-colors duration-200 flex items-center gap-1.5"
+              className="text-xl font-bold cursor-pointer hover:text-primary transition-colors duration-200 flex items-center gap-1.5"
+              whileHover={{ scale: 1.01, x: 3 }}
+              style={{
+                paddingLeft: isActive ? '12px' : '0px'
+              }}
             >
+              {isActive && (
+                <motion.span 
+                  initial={{ opacity: 0, scale: 0.5, rotate: -30 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  className="absolute -left-2 top-1 text-primary"
+                >
+                  <Star className="h-4 w-4 fill-primary" />
+                </motion.span>
+              )}
               {player.name}
               <Edit className="h-3.5 w-3.5 opacity-0 group-hover:opacity-70 transition-opacity" />
-            </h2>
+            </motion.h2>
           )}
           <Button 
             variant="ghost" 
@@ -217,38 +243,43 @@ const Player: React.FC<PlayerProps> = ({
         <motion.div
           initial={{ scale: 1 }}
           whileHover={{ scale: 1.02 }}
-          className="mb-4 flex justify-center"
+          className="mb-5 flex justify-center"
         >
-          <div className="flex items-center justify-center gap-3 p-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="text-destructive border-2 border-destructive/30 bg-destructive/10 hover:bg-destructive/20 hover:border-destructive/50 rounded-full h-12 w-12 transition-colors shadow-sm"
-              onClick={() => updateLife(-1)}
-            >
-              <Minus className="h-5 w-5" />
-            </Button>
+          <div className="flex items-center justify-center gap-4 p-1">
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="outline"
+                size="icon"
+                className="text-destructive border-2 border-destructive/30 bg-destructive/10 hover:bg-destructive/20 hover:border-destructive/60 rounded-full h-12 w-12 transition-colors shadow-md"
+                onClick={() => updateLife(-1)}
+              >
+                <Minus className="h-5 w-5" />
+              </Button>
+            </motion.div>
             
-            <div className="flex-shrink-0 bg-gradient-to-br from-card to-background px-6 py-2.5 rounded-full border-2 border-border/60 min-w-[100px] text-center shadow-sm">
+            <div className="flex-shrink-0 bg-gradient-to-br from-card via-background to-card px-6 py-2.5 rounded-full border-2 border-border/60 min-w-[100px] text-center shadow-lg relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-primary/5 pointer-events-none"></div>
               <motion.span 
                 key={player.life}
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                className="text-2xl font-bold text-foreground"
+                initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.2, type: "spring", stiffness: 300 }}
+                className="text-2xl font-bold text-foreground relative z-10"
               >
                 {player.life}
               </motion.span>
             </div>
             
-            <Button
-              variant="outline"
-              size="icon"
-              className="text-primary border-2 border-primary/30 bg-primary/10 hover:bg-primary/20 hover:border-primary/50 rounded-full h-12 w-12 transition-colors shadow-sm"
-              onClick={() => updateLife(1)}
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="outline"
+                size="icon"
+                className="text-primary border-2 border-primary/30 bg-primary/10 hover:bg-primary/20 hover:border-primary/60 rounded-full h-12 w-12 transition-colors shadow-md"
+                onClick={() => updateLife(1)}
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            </motion.div>
           </div>
         </motion.div>
 
@@ -259,136 +290,210 @@ const Player: React.FC<PlayerProps> = ({
           onValueChange={setActiveTab}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-2 mb-2 bg-muted/50 h-12">
+          <TabsList className="grid w-full grid-cols-2 mb-3 bg-muted/80 rounded-xl h-12 p-1">
             <TabsTrigger 
               value="mana" 
-              className={`text-base py-3 ${totalMana > 0 ? "after:content-[''] after:absolute after:right-2 after:top-1.5 after:h-3 after:w-3 after:rounded-full after:bg-primary after:animate-pulse" : ""} ${activeTab === "mana" ? "data-[state=active]:bg-card" : ""}`}
+              className={`text-base font-medium rounded-lg ${
+                totalMana > 0 
+                  ? "after:content-[''] after:absolute after:right-2 after:top-2 after:h-3 after:w-3 after:rounded-full after:bg-primary after:animate-pulse" 
+                  : ""
+              } ${
+                activeTab === "mana" 
+                  ? "data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:text-primary" 
+                  : ""
+              }`}
             >
               Mana Pool
             </TabsTrigger>
             <TabsTrigger 
               value="lands" 
-              className={`text-base py-3 ${activeTab === "lands" ? "data-[state=active]:bg-card" : ""}`}
+              className={`text-base font-medium rounded-lg ${
+                activeTab === "lands" 
+                  ? "data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:text-primary" 
+                  : ""
+              }`}
             >
               Lands
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="mana" className="mt-0 rounded-md bg-card/30 pt-3 px-3 pb-2">
-            {totalMana === 0 ? (
-              <div className="text-center py-6 text-sm text-muted-foreground">
-                <Droplet className="h-6 w-6 mx-auto mb-2 opacity-40" />
-                <p className="text-base">Your mana pool is empty</p>
-                <p className="text-sm mt-1.5">Tap lands to add mana</p>
-              </div>
-            ) : (
-              <div className="bg-card/60 p-3 rounded-md border border-border/30 mb-1.5">
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {MANA_TYPES.map(mana => (
-                    <div 
-                      key={mana.symbol} 
-                      className={`flex flex-col items-center border-2 border-border/40 rounded-md p-2.5 min-w-[80px] ${mana.bgClassName}`}
-                    >
-                      <span className="text-xl">{mana.display}</span>
-                      <span className={`font-bold text-2xl my-1.5 ${mana.iconColor}`}>
-                        {player.manaPool[mana.symbol as keyof typeof player.manaPool]}
-                      </span>
-                      <div className="flex gap-2 mt-1 w-full">
-                        <Button 
-                          variant="ghost"
-                          size="icon"
-                          className={`h-10 w-10 bg-destructive/20 hover:bg-destructive/30 text-destructive border border-destructive/20 hover:border-destructive/40 ${
-                            player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0 
-                              ? 'opacity-50 cursor-not-allowed' 
-                              : ''
-                          }`}
-                          onClick={() => decrementMana(mana.symbol)}
-                          disabled={player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0}
-                          title="Use mana"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost"
-                          size="icon"
-                          className="h-10 w-10 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20 hover:border-primary/40"
-                          onClick={() => incrementMana(mana.symbol)}
-                          title="Add mana"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="mt-3 pt-2 border-t border-border/30 text-center text-xs text-muted-foreground">
-                  <p>Your mana pool is filled at the beginning of your turn based on your lands.</p>
-                </div>
-              </div>
-            )}
+          <TabsContent value="mana" className="mt-0 rounded-xl bg-card/50 backdrop-blur-sm pt-4 px-4 pb-3 border border-border/30 shadow-sm">
+            <AnimatePresence mode="wait">
+              {totalMana === 0 ? (
+                <motion.div 
+                  key="empty-mana"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-center py-8 text-sm text-muted-foreground"
+                >
+                  <Droplet className="h-7 w-7 mx-auto mb-3 opacity-40" />
+                  <p className="text-base font-medium">Your mana pool is empty</p>
+                  <p className="text-sm mt-2">Tap lands to add mana</p>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="mana-content"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-card p-4 rounded-xl border border-border/40 mb-1.5 shadow-inner"
+                >
+                  <div className="flex flex-wrap gap-3 justify-center">
+                    {MANA_TYPES.map(mana => (
+                      <motion.div 
+                        key={mana.symbol}
+                        initial={{ scale: 0.95, opacity: 0.8 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        whileHover={{ scale: 1.03, y: -2 }}
+                        className={`flex flex-col items-center border-2 border-border/40 rounded-xl overflow-hidden ${mana.bgClassName} shadow-md min-w-[80px]`}
+                      >
+                        <div className="w-full text-center py-1.5 bg-background/10 backdrop-blur-sm border-b border-border/30">
+                          <span className="text-xl">{mana.display}</span>
+                        </div>
+                        <div className="py-2 flex-1 flex flex-col items-center justify-center w-full px-3">
+                          <motion.span 
+                            key={player.manaPool[mana.symbol as keyof typeof player.manaPool]}
+                            initial={{ scale: 1.2, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className={`font-bold text-2xl ${mana.iconColor}`}
+                          >
+                            {player.manaPool[mana.symbol as keyof typeof player.manaPool]}
+                          </motion.span>
+                          <div className="flex gap-2 mt-2 w-full">
+                            <motion.div whileTap={{ scale: 0.9 }}>
+                              <Button 
+                                variant="ghost"
+                                size="icon"
+                                className={`h-10 w-10 bg-destructive/20 hover:bg-destructive/30 text-destructive border border-destructive/20 hover:border-destructive/40 shadow-sm ${
+                                  player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0 
+                                    ? 'opacity-50 cursor-not-allowed' 
+                                    : ''
+                                }`}
+                                onClick={() => decrementMana(mana.symbol)}
+                                disabled={player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0}
+                                title="Use mana"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                            <motion.div whileTap={{ scale: 0.9 }}>
+                              <Button 
+                                variant="ghost"
+                                size="icon"
+                                className="h-10 w-10 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20 hover:border-primary/40 shadow-sm"
+                                onClick={() => incrementMana(mana.symbol)}
+                                title="Add mana"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-4 pt-2 border-t border-border/30 text-center text-xs text-muted-foreground">
+                    <p>Your mana pool is filled at the beginning of your turn based on your lands.</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </TabsContent>
           
-          <TabsContent value="lands" className="mt-0 rounded-md bg-card/30 pt-3 px-3 pb-2">
+          <TabsContent value="lands" className="mt-0 rounded-xl bg-card/50 backdrop-blur-sm pt-4 px-4 pb-3 border border-border/30 shadow-sm">
             {/* Land type buttons - ENHANCED */}
-            <div className="flex flex-wrap justify-center gap-2 mb-4">
+            <div className="flex flex-wrap justify-center gap-2 mb-5">
               {LAND_TYPES.map(land => (
-                <Button 
-                  key={land.type} 
-                  variant="ghost"
-                  size="icon"
-                  className={`h-11 w-11 ${land.bgClassName} border-2 border-border/40 hover:border-primary/40 hover:bg-background hover:scale-105 transition-all duration-200 shadow-sm`}
-                  onClick={() => addLand(land)}
-                  title={land.type}
+                <motion.div
+                  key={land.type}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0.9, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
                 >
-                  <span className={`text-lg ${land.iconColor}`}>{land.symbol}</span>
-                </Button>
+                  <Button 
+                    variant="ghost"
+                    size="icon"
+                    className={`h-12 w-12 ${land.bgClassName} border-2 border-border/40 hover:border-primary/40 hover:bg-background hover:shadow-md transition-all duration-200 shadow rounded-xl`}
+                    onClick={() => addLand(land)}
+                    title={land.type}
+                  >
+                    <span className={`text-lg ${land.iconColor}`}>{land.symbol}</span>
+                  </Button>
+                </motion.div>
               ))}
             </div>
             
             {/* Lands display */}
-            <div className="flex flex-wrap gap-2 justify-center">
-              {player.lands.length === 0 ? (
-                <div className="text-sm text-muted-foreground py-4">
-                  No lands yet. Add some above.
-                </div>
-              ) : (
-                player.lands.map(land => {
-                  const landType = LAND_TYPES.find(l => l.type === land.type);
-                  return (
-                    <motion.div 
-                      key={land.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      whileHover={{ scale: land.tapped ? 1.05 : 1.1 }}
-                      className={`w-11 h-14 border-2 border-input/40 rounded-md flex items-center justify-center relative cursor-pointer group ${landType?.bgClassName} ${
-                        land.tapped 
-                          ? 'transform rotate-90 opacity-70 hover:opacity-90' 
-                          : 'hover:border-input hover:shadow-md'
-                      } transition-all duration-300`}
-                      onClick={() => toggleLand(land.id)}
-                    >
-                      <span className={`text-lg ${landType?.iconColor || ''}`}>{landType?.symbol}</span>
-                      <Button 
-                        variant="destructive"
-                        size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 p-0 border border-destructive/30 hover:border-destructive shadow-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeLand(land.id);
+            <div className="bg-card/80 p-3 rounded-xl border border-border/40 shadow-inner">
+              <div className="flex flex-wrap gap-2 justify-center">
+                {player.lands.length === 0 ? (
+                  <div className="text-sm text-muted-foreground py-6 text-center w-full">
+                    <p>No lands yet. Add some above.</p>
+                  </div>
+                ) : (
+                  player.lands.map(land => {
+                    const landType = LAND_TYPES.find(l => l.type === land.type);
+                    return (
+                      <motion.div 
+                        key={land.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        whileHover={{ scale: land.tapped ? 1.05 : 1.08 }}
+                        className={`w-12 h-15 border-2 border-input/40 rounded-xl flex items-center justify-center relative cursor-pointer group ${landType?.bgClassName} ${
+                          land.tapped 
+                            ? 'transform rotate-90 opacity-70 hover:opacity-90' 
+                            : 'hover:border-input hover:shadow-lg'
+                        } ${
+                          tappedLandId === land.id 
+                            ? 'animate-pulse border-primary' 
+                            : ''
+                        } transition-all duration-300`}
+                        style={{ 
+                          backgroundImage: land.tapped ? 'linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.08))' : '' 
                         }}
+                        onClick={() => toggleLand(land.id)}
                       >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </motion.div>
-                  );
-                })
-              )}
+                        <span className={`text-xl ${landType?.iconColor || ''}`}>{landType?.symbol}</span>
+                        <div className="absolute bottom-1 left-0 right-0 text-center">
+                          <span className="text-[10px] font-medium text-muted-foreground/80">
+                            {land.type.substring(0, 1)}
+                          </span>
+                        </div>
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0 }}
+                          whileHover={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Button 
+                            variant="destructive"
+                            size="icon"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 p-0 border border-destructive/30 hover:border-destructive shadow-sm z-10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeLand(land.id);
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </motion.div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </div>
             </div>
             
             {/* Remove Lands section - ENHANCED */}
             {player.lands.length > 0 && (
-              <div className="mt-5 pt-4 border-t border-border/30">
+              <motion.div 
+                className="mt-5 pt-4 border-t border-border/30"
+                initial={{ opacity: 0.9, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
                 <h3 className="text-base font-medium text-center mb-3 flex items-center justify-center gap-1.5">
                   <Trash2 className="h-4 w-4 text-muted-foreground" />
                   Remove Lands
@@ -400,25 +505,30 @@ const Player: React.FC<PlayerProps> = ({
                     if (count === 0) return null;
                     
                     return (
-                      <Button
+                      <motion.div
                         key={`remove-${land.type}`}
-                        variant="outline"
-                        size="default"
-                        className={`h-11 py-2 px-3 ${land.bgClassName} border-2 border-border/40 hover:bg-destructive/10 hover:border-destructive/40 shadow-sm`}
-                        onClick={() => removeLandByType(land.type)}
+                        whileHover={{ scale: 1.03, y: -1 }}
+                        whileTap={{ scale: 0.97 }}
                       >
-                        <span className={`mr-2 text-lg ${land.iconColor}`}>{land.symbol}</span>
-                        <span className="text-sm font-medium">
-                          {count}
-                        </span>
-                      </Button>
+                        <Button
+                          variant="outline"
+                          size="default"
+                          className={`h-11 py-2 px-3 ${land.bgClassName} border-2 border-border/40 hover:bg-destructive/10 hover:border-destructive/40 shadow-md rounded-xl`}
+                          onClick={() => removeLandByType(land.type)}
+                        >
+                          <span className={`mr-2 text-lg ${land.iconColor}`}>{land.symbol}</span>
+                          <span className="font-medium text-sm bg-background/40 rounded-full min-w-[1.5rem] h-6 inline-flex items-center justify-center px-1.5 border border-border/30">
+                            {count}
+                          </span>
+                        </Button>
+                      </motion.div>
                     );
                   })}
                 </div>
                 <p className="text-sm text-muted-foreground text-center mt-3 mb-1">
                   Click to remove one land of that type
                 </p>
-              </div>
+              </motion.div>
             )}
           </TabsContent>
         </Tabs>
