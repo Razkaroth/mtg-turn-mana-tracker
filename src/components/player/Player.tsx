@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Minus, X, Ghost, Edit, Droplet } from "lucide-react";
+import { Plus, Minus, X, Ghost, Edit, Droplet, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface ManaType {
@@ -78,6 +78,16 @@ const Player: React.FC<PlayerProps> = ({
     onUpdate({ lands: player.lands.filter(land => land.id !== landId) });
   };
 
+  // Function to remove the first land of a specific type
+  const removeLandByType = (landType: string) => {
+    // Find the first land of the specified type
+    const landToRemove = player.lands.find(land => land.type === landType);
+    if (landToRemove) {
+      // Remove that land
+      removeLand(landToRemove.id);
+    }
+  };
+
   const toggleLand = (landId: number) => {
     // Get the land being toggled
     const land = player.lands.find(l => l.id === landId);
@@ -132,6 +142,12 @@ const Player: React.FC<PlayerProps> = ({
 
   // Helper to count total mana
   const totalMana = Object.values(player.manaPool).reduce((sum, count) => sum + count, 0);
+
+  // Get counts of each land type
+  const landCounts = player.lands.reduce((counts: Record<string, number>, land) => {
+    counts[land.type] = (counts[land.type] || 0) + 1;
+    return counts;
+  }, {});
 
   // If minimal display is requested (for phantom players), show a simplified card
   if (isMinimal) {
@@ -369,6 +385,41 @@ const Player: React.FC<PlayerProps> = ({
                 })
               )}
             </div>
+            
+            {/* Remove Lands section */}
+            {player.lands.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-border/30">
+                <h3 className="text-sm font-medium text-center mb-2 flex items-center justify-center gap-1">
+                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  Remove Lands
+                </h3>
+                <div className="flex flex-wrap justify-center gap-1">
+                  {LAND_TYPES.map(land => {
+                    const count = landCounts[land.type] || 0;
+                    // Only show buttons for land types the player has
+                    if (count === 0) return null;
+                    
+                    return (
+                      <Button
+                        key={`remove-${land.type}`}
+                        variant="outline"
+                        size="sm"
+                        className={`${land.bgClassName} border-border/40 hover:bg-background/80 hover:border-destructive/40`}
+                        onClick={() => removeLandByType(land.type)}
+                      >
+                        <span className={`mr-1.5 ${land.iconColor}`}>{land.symbol}</span>
+                        <span className="text-xs">
+                          {count}
+                        </span>
+                      </Button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Click to remove one land of that type
+                </p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>
