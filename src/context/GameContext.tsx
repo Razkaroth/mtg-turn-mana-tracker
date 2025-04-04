@@ -113,21 +113,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     playerPosition: number = 0
   ) => {
     setPlayers(configuredPlayers);
-    const startingPlayerIndex = singlePlayerMode ? playerPosition : 0;
-    
-    setActivePlayerIndex(startingPlayerIndex);
-    setDisplayedPlayerIndex(startingPlayerIndex);
+    setActivePlayerIndex(singlePlayerMode ? playerPosition : 0);
+    setDisplayedPlayerIndex(singlePlayerMode ? playerPosition : 0);
     setTimerRunning(false);
     setIsSinglePlayerMode(singlePlayerMode);
     setActualPlayerIndex(playerPosition);
     setIsPhantomPhase(false);
     setGameStarted(true);
-    
-    // Fill mana pool for the starting player after game starts
-    // We need to use setTimeout to ensure this runs after the players state has been updated
-    setTimeout(() => {
-      fillManaPool(startingPlayerIndex);
-    }, 0);
   };
 
   // Reset the game to initial state and clear saved game
@@ -228,33 +220,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setPlayers(updatedPlayers);
   };
   
-  // Fill the mana pool for a player based on their lands
-  const fillManaPool = (playerIndex: number) => {
-    const player = players[playerIndex];
-    if (!player) return;
-
-    // Create a new mana pool starting with zero
-    const newManaPool = { ...defaultManaPool };
-    
-    // Add mana for each land
-    player.lands.forEach(land => {
-      newManaPool[land.produces as keyof typeof newManaPool]++;
-    });
-    
-    // Update the player with the filled mana pool
-    const updatedPlayer = {
-      ...player,
-      manaPool: newManaPool,
-      // Set all lands as tapped to represent they've been used
-      lands: player.lands.map(land => ({ ...land, tapped: true }))
-    };
-    
-    // Update player in the players array
-    setPlayers(prevPlayers => 
-      prevPlayers.map((p, i) => i === playerIndex ? updatedPlayer : p)
-    );
-  };
-
   // Move to the next player's turn
   const nextTurn = () => {
     // In single player mode, toggle between real player and phantom phase
@@ -271,9 +236,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setActivePlayerIndex(actualPlayerIndex);
         setDisplayedPlayerIndex(actualPlayerIndex);
         setIsPhantomPhase(false);
-        
-        // Fill mana pool for the real player at the start of their turn
-        fillManaPool(actualPlayerIndex);
       }
     } else {
       // Regular multi-player mode - cycle through players normally
@@ -281,9 +243,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       resetManaPools([activePlayerIndex]);
       setActivePlayerIndex(nextActivePlayerIndex);
       setDisplayedPlayerIndex(nextActivePlayerIndex);
-      
-      // Fill mana pool for the next player
-      fillManaPool(nextActivePlayerIndex);
     }
   };
   
@@ -299,9 +258,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActivePlayerIndex(actualPlayerIndex);
     setDisplayedPlayerIndex(actualPlayerIndex);
     setIsPhantomPhase(false);
-    
-    // Fill mana pool for the real player at the start of their turn
-    fillManaPool(actualPlayerIndex);
   };
 
   const value = {
