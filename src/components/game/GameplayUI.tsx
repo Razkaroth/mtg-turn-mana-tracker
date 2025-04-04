@@ -191,7 +191,7 @@ export const GameplayUI: React.FC = () => {
               ) : (
                 <span className={`font-medium ${activePlayer.isPhantom ? 'text-muted-foreground italic' : 'text-foreground'}`}>
                   {activePlayer.name}
-                  {activePlayer.isPhantom && " (AI)"}
+                  {activePlayer.isPhantom && " (Remote)"}
                 </span>
               )}
             </div>
@@ -208,7 +208,7 @@ export const GameplayUI: React.FC = () => {
                     <p>Each player takes turns. When a player's turn begins, their lands automatically untap and their mana pool is filled.</p>
                     {isSinglePlayerMode && (
                       <p className="text-primary-foreground/80 bg-primary/10 p-1.5 rounded text-xs">
-                        In single player mode, opponents' turns are combined into a single "Opponents' Phase"
+                        In single player mode, you're the only one using this device. Opponents' turns are tracked in a combined "Opponents' Phase".
                       </p>
                     )}
                   </div>

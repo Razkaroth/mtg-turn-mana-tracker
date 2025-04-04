@@ -32,7 +32,7 @@ const PhantomTurnBanner: React.FC<PhantomTurnBannerProps> = ({ onNextTurn }) => 
         <ul className="text-sm text-blue-600/90 dark:text-blue-400/90 mb-4 space-y-1.5 pl-5 list-disc">
           <li>Cast instants and activated abilities</li>
           <li>Mentally prepare for your next turn</li>
-          <li>End this phase when you're ready</li>
+          <li><b>Reading</b> what your cards do</li>
         </ul>
         
         <div className="flex justify-end">
