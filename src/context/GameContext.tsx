@@ -314,28 +314,26 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (isSinglePlayerMode) {
       if (activePlayerIndex === actualPlayerIndex) {
         // End real player's turn, start phantom phase
-        resetManaPools([actualPlayerIndex]);
+        // Don't reset the real player's mana pool here
         setIsPhantomPhase(true);
       } else {
         // End phantom phase, start real player's turn
-        // Reset mana pools for all phantom players
-        const phantomIndices = players.map((_, i) => i).filter(i => i !== actualPlayerIndex);
-        resetManaPools(phantomIndices);
         setActivePlayerIndex(actualPlayerIndex);
         setDisplayedPlayerIndex(actualPlayerIndex);
         setIsPhantomPhase(false);
         
-        // Fill mana pool for the real player at the start of their turn
+        // Reset and then fill mana pool for the real player at the start of their turn
+        resetManaPools([actualPlayerIndex]);
         fillManaPool(actualPlayerIndex);
       }
     } else {
       // Regular multi-player mode - cycle through players normally
       const nextActivePlayerIndex = (activePlayerIndex + 1) % players.length;
-      resetManaPools([activePlayerIndex]);
       setActivePlayerIndex(nextActivePlayerIndex);
       setDisplayedPlayerIndex(nextActivePlayerIndex);
       
-      // Fill mana pool for the next player
+      // Reset and then fill mana pool for the next player at the start of their turn
+      resetManaPools([nextActivePlayerIndex]);
       fillManaPool(nextActivePlayerIndex);
     }
   };
@@ -344,16 +342,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const advancePhantomTurn = () => {
     if (!isPhantomTurn) return; // Only works during phantom turns
     
-    // Reset mana pools for all phantom players
-    const phantomIndices = players.map((_, i) => i).filter(i => i !== actualPlayerIndex);
-    resetManaPools(phantomIndices);
-    
     // Switch back to real player's turn
     setActivePlayerIndex(actualPlayerIndex);
     setDisplayedPlayerIndex(actualPlayerIndex);
     setIsPhantomPhase(false);
     
-    // Fill mana pool for the real player at the start of their turn
+    // Reset and then fill mana pool for the real player at the start of their turn
+    resetManaPools([actualPlayerIndex]);
     fillManaPool(actualPlayerIndex);
   };
 
