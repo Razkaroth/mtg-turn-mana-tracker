@@ -3,7 +3,7 @@ import { PlayerData } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RotateCcw, Clock, Users } from "lucide-react";
+import { RotateCcw, Clock, Users, Play, Pause } from "lucide-react";
 import { useGame } from '../../context/GameContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -13,13 +13,15 @@ interface ChessTimerProps {
   activePlayerIndex: number;
   running: boolean;
   onTurnEnd: () => void;
+  setTimerRunning?: (isRunning: boolean) => void;
 }
 
 const ChessTimer: React.FC<ChessTimerProps> = ({ 
   players, 
   activePlayerIndex, 
   running, 
-  onTurnEnd 
+  onTurnEnd,
+  setTimerRunning
 }) => {
   // Get time from settings
   const { settings } = useGame();
@@ -358,15 +360,33 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
           </div>
         )}
         
-        <Button 
-          onClick={resetTimers}
-          variant="ghost"
-          size="sm"
-          className="w-full text-sm border border-border/40 hover:bg-muted/40 transition-colors"
-        >
-          <RotateCcw className="h-3.5 w-3.5 mr-1 opacity-70" />
-          Reset Timers
-        </Button>
+        {/* Timer controls */}
+        <div className="flex items-center gap-2">
+          {setTimerRunning && (
+            <Button 
+              onClick={() => setTimerRunning(!running)}
+              variant={running ? "secondary" : "outline"}
+              className={`flex-1 py-2 h-auto flex items-center justify-center gap-2 border ${
+                running 
+                ? 'border-primary/40 text-primary hover:bg-primary/10' 
+                : 'border-border/40 hover:bg-background hover:border-border'
+              }`}
+            >
+              {running ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+              <span>{running ? 'Pause' : 'Start'}</span>
+            </Button>
+          )}
+          
+          <Button 
+            onClick={resetTimers}
+            variant="destructive"
+            size="icon"
+            className="h-10 w-10 rounded-md shrink-0"
+            title="Reset Timers"
+          >
+            <RotateCcw className="h-5 w-5" />
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

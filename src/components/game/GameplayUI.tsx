@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Play, Pause, ArrowRight, SkipForward } from "lucide-react";
+import { ArrowRight, SkipForward } from "lucide-react";
 import { useGame } from '../../context/GameContext';
 import Player from '../player/Player';
 import ChessTimer from '../timer/ChessTimer';
@@ -111,21 +111,7 @@ export const GameplayUI: React.FC = () => {
         className="flex-none p-4 pb-2 border-b border-border/40 bg-background/80 backdrop-blur-sm z-10"
       >
         {/* Game controls */}
-        <div className="flex justify-center gap-2 max-w-sm mx-auto">          
-          <Button 
-            onClick={() => setTimerRunning(!timerRunning)}
-            variant={timerRunning ? "secondary" : "outline"}
-            size="sm"
-            className={`flex items-center gap-1 px-3 border ${
-              timerRunning 
-              ? 'border-primary/40 text-primary hover:bg-primary/10' 
-              : 'border-border/40 hover:bg-background hover:border-border'
-            }`}
-          >
-            {timerRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            <span className="text-sm">{timerRunning ? 'Pause' : 'Start'}</span>
-          </Button>
-          
+        <div className="flex justify-center max-w-sm mx-auto">
           <AnimatePresence mode="wait">
             {isPhantomPhase ? (
               // Show "Begin Your Turn" button during phantom phase
@@ -135,15 +121,16 @@ export const GameplayUI: React.FC = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
                 transition={{ duration: 0.2 }}
+                className="w-full"
               >
                 <Button 
                   onClick={handleAdvancePhantomTurn}
                   variant="default"
-                  size="sm"
-                  className="flex items-center gap-1 px-3 bg-primary/90 hover:bg-primary"
+                  size="lg"
+                  className="w-full py-6 text-base flex items-center justify-center gap-2 bg-primary/90 hover:bg-primary"
                 >
-                  <SkipForward className="h-4 w-4" />
-                  <span className="text-sm">Begin Your Turn</span>
+                  <SkipForward className="h-5 w-5" />
+                  <span>Begin Your Turn</span>
                 </Button>
               </motion.div>
             ) : (
@@ -154,15 +141,16 @@ export const GameplayUI: React.FC = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
                 transition={{ duration: 0.2 }}
+                className="w-full"
               >
                 <Button 
                   onClick={handleNextTurn}
                   variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1 px-3 border-border/40 hover:bg-background hover:border-border"
+                  size="lg"
+                  className="w-full py-6 text-base flex items-center justify-center gap-2 border-border/40 hover:bg-background hover:border-border"
                 >
-                  <ArrowRight className="h-4 w-4" />
-                  <span className="text-sm">Next Turn</span>
+                  <ArrowRight className="h-5 w-5" />
+                  <span>Next Turn</span>
                 </Button>
               </motion.div>
             )}
@@ -178,6 +166,7 @@ export const GameplayUI: React.FC = () => {
             activePlayerIndex={activePlayerIndex} 
             running={timerRunning}
             onTurnEnd={handleNextTurn}
+            setTimerRunning={setTimerRunning}
           />
           
           {/* Display whose turn it is */}
