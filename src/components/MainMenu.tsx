@@ -20,7 +20,7 @@ import {
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { PlusCircle, User, Trash2, Edit, Play, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { PlayerData } from '../App';
+import { PlayerData } from '../types';
 
 interface MainMenuProps {
   onStartGame: (players: PlayerData[]) => void;

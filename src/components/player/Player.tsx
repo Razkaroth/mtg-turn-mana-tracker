@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlayerData } from '../../types';
+import { PlayerData, Land, ManaType as GameManaType } from '../../types';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -66,23 +66,23 @@ const Player: React.FC<PlayerProps> = ({
   };
 
   const addLand = (landType: LandType) => {
-    const newLand = { 
+    const newLand: Land = { 
       id: Date.now(), 
       type: landType.type, 
       tapped: false, 
-      produces: landType.produces 
+      produces: landType.produces as GameManaType
     };
     onUpdate({ lands: [...player.lands, newLand] });
   };
 
   const removeLand = (landId: number) => {
-    onUpdate({ lands: player.lands.filter(land => land.id !== landId) });
+    onUpdate({ lands: player.lands.filter((land: Land) => land.id !== landId) });
   };
 
   // Function to remove the first land of a specific type
   const removeLandByType = (landType: string) => {
     // Find the first land of the specified type
-    const landToRemove = player.lands.find(land => land.type === landType);
+    const landToRemove = player.lands.find((land: Land) => land.type === landType);
     if (landToRemove) {
       // Trigger visual effect
       setTappedLandId(landToRemove.id);
@@ -97,7 +97,7 @@ const Player: React.FC<PlayerProps> = ({
 
   const toggleLand = (landId: number) => {
     // Get the land being toggled
-    const land = player.lands.find(l => l.id === landId);
+    const land = player.lands.find((l: Land) => l.id === landId);
     if (!land) return;
 
     // Trigger the animation
@@ -111,7 +111,7 @@ const Player: React.FC<PlayerProps> = ({
       // Update mana pool and toggle the land
       onUpdate({ 
         manaPool: updatedManaPool,
-        lands: player.lands.map(l => {
+        lands: player.lands.map((l: Land) => {
           if (l.id === landId) {
             return { ...l, tapped: true };
           }
@@ -121,7 +121,7 @@ const Player: React.FC<PlayerProps> = ({
     } else {
       // Just toggle the land to untapped without affecting mana pool
       onUpdate({
-        lands: player.lands.map(l => {
+        lands: player.lands.map((l: Land) => {
           if (l.id === landId) {
             return { ...l, tapped: false };
           }

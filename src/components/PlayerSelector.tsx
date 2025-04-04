@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { ChevronUp, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PlayerData } from '../App';
+import { PlayerData } from '../types';
 
 interface PlayerSelectorProps {
   players: PlayerData[];

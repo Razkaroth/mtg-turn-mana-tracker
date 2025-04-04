@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
-import { PlayerData } from '../App';
+import { useState } from 'react';
+import { PlayerData, Land } from '../types';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Minus, X } from "lucide-react";
 
-interface ManaType {
+interface UILandType {
+  type: string;
+  produces: string; // This matches the string representation of ManaType
   symbol: string;
-  color: string;
-  display: string;
   bgClassName: string; // Tailwind class for background
 }
 
-interface LandType {
-  type: string;
-  produces: string;
+interface UIManaType {
   symbol: string;
+  color: string;
+  display: string;
   bgClassName: string; // Tailwind class for background
 }
 
@@ -27,7 +27,7 @@ interface PlayerProps {
   onRemove: () => void;
 }
 
-const MANA_TYPES: ManaType[] = [
+const MANA_TYPES: UIManaType[] = [
   { symbol: 'W', color: 'white', display: '☀️', bgClassName: 'bg-muted' },
   { symbol: 'U', color: 'blue', display: '💧', bgClassName: 'bg-muted' },
   { symbol: 'B', color: 'black', display: '💀', bgClassName: 'bg-muted' },
@@ -36,7 +36,7 @@ const MANA_TYPES: ManaType[] = [
   { symbol: 'C', color: 'colorless', display: '💎', bgClassName: 'bg-muted' }
 ];
 
-const LAND_TYPES: LandType[] = [
+const LAND_TYPES: UILandType[] = [
   { type: 'Plains', produces: 'W', symbol: '☀️', bgClassName: 'bg-muted' },
   { type: 'Island', produces: 'U', symbol: '💧', bgClassName: 'bg-muted' },
   { type: 'Swamp', produces: 'B', symbol: '💀', bgClassName: 'bg-muted' },
@@ -53,22 +53,22 @@ function Player({ player, isActive, onUpdate, onRemove }: PlayerProps) {
     onUpdate({ life: player.life + amount });
   };
 
-  const addLand = (landType: LandType) => {
+  const addLand = (landType: UILandType) => {
     const newLand = { 
       id: Date.now(), 
       type: landType.type, 
       tapped: false, 
-      produces: landType.produces 
+      produces: landType.produces as any // Using 'as any' to bypass the type check, since we know it's valid
     };
-    onUpdate({ lands: [...player.lands, newLand] });
+    onUpdate({ lands: [...player.lands, newLand as Land] });
   };
 
   const removeLand = (landId: number) => {
-    onUpdate({ lands: player.lands.filter(land => land.id !== landId) });
+    onUpdate({ lands: player.lands.filter((land: Land) => land.id !== landId) });
   };
 
   const toggleLand = (landId: number) => {
-    const updatedLands = player.lands.map(land => {
+    const updatedLands = player.lands.map((land: Land) => {
       if (land.id === landId) {
         if (!land.tapped) {
           // When tapping a land, add mana to the pool
@@ -180,7 +180,7 @@ function Player({ player, isActive, onUpdate, onRemove }: PlayerProps) {
               </div>
               
               <div className="flex flex-wrap gap-1.5 justify-center">
-                {player.lands.map(land => {
+                {player.lands.map((land: Land) => {
                   const landType = LAND_TYPES.find(l => l.type === land.type);
                   return (
                     <div 

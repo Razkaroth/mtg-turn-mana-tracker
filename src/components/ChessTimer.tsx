@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { PlayerData } from '../App';
+import { useState, useEffect, useRef } from 'react';
+import { PlayerData } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
