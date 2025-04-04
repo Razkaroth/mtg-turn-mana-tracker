@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { PlayerData } from '../App';
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Minus, X } from "lucide-react";
 
 interface ManaType {
   symbol: string;
   color: string;
   display: string;
-  bgColor: string; // Tailwind bg color class
+  bgClassName: string; // Tailwind class for background
 }
 
 interface LandType {
   type: string;
   produces: string;
   symbol: string;
-  bgColor: string; // Tailwind bg color class
+  bgClassName: string; // Tailwind class for background
 }
 
 interface PlayerProps {
@@ -20,31 +25,29 @@ interface PlayerProps {
   isActive: boolean;
   onUpdate: (updatedData: Partial<PlayerData>) => void;
   onRemove: () => void;
-  compact: boolean;
 }
 
 const MANA_TYPES: ManaType[] = [
-  { symbol: 'W', color: 'white', display: '☀️', bgColor: 'bg-yellow-100/90 text-gray-900' },
-  { symbol: 'U', color: 'blue', display: '💧', bgColor: 'bg-blue-200/90 text-gray-900' },
-  { symbol: 'B', color: 'black', display: '💀', bgColor: 'bg-gray-400/90 text-gray-900' },
-  { symbol: 'R', color: 'red', display: '🔥', bgColor: 'bg-red-200/90 text-gray-900' },
-  { symbol: 'G', color: 'green', display: '🌳', bgColor: 'bg-green-200/90 text-gray-900' },
-  { symbol: 'C', color: 'colorless', display: '💎', bgColor: 'bg-gray-200/90 text-gray-900' }
+  { symbol: 'W', color: 'white', display: '☀️', bgClassName: 'bg-muted' },
+  { symbol: 'U', color: 'blue', display: '💧', bgClassName: 'bg-muted' },
+  { symbol: 'B', color: 'black', display: '💀', bgClassName: 'bg-muted' },
+  { symbol: 'R', color: 'red', display: '🔥', bgClassName: 'bg-muted' },
+  { symbol: 'G', color: 'green', display: '🌳', bgClassName: 'bg-muted' },
+  { symbol: 'C', color: 'colorless', display: '💎', bgClassName: 'bg-muted' }
 ];
 
 const LAND_TYPES: LandType[] = [
-  { type: 'Plains', produces: 'W', symbol: '☀️', bgColor: 'bg-yellow-100/90 text-gray-900' },
-  { type: 'Island', produces: 'U', symbol: '💧', bgColor: 'bg-blue-200/90 text-gray-900' },
-  { type: 'Swamp', produces: 'B', symbol: '💀', bgColor: 'bg-gray-400/90 text-gray-900' },
-  { type: 'Mountain', produces: 'R', symbol: '🔥', bgColor: 'bg-red-200/90 text-gray-900' },
-  { type: 'Forest', produces: 'G', symbol: '🌳', bgColor: 'bg-green-200/90 text-gray-900' },
-  { type: 'Wastes', produces: 'C', symbol: '💎', bgColor: 'bg-gray-200/90 text-gray-900' }
+  { type: 'Plains', produces: 'W', symbol: '☀️', bgClassName: 'bg-muted' },
+  { type: 'Island', produces: 'U', symbol: '💧', bgClassName: 'bg-muted' },
+  { type: 'Swamp', produces: 'B', symbol: '💀', bgClassName: 'bg-muted' },
+  { type: 'Mountain', produces: 'R', symbol: '🔥', bgClassName: 'bg-muted' },
+  { type: 'Forest', produces: 'G', symbol: '🌳', bgClassName: 'bg-muted' },
+  { type: 'Wastes', produces: 'C', symbol: '💎', bgClassName: 'bg-muted' }
 ];
 
-function Player({ player, isActive, onUpdate, onRemove, compact }: PlayerProps) {
+function Player({ player, isActive, onUpdate, onRemove }: PlayerProps) {
   const [nameEditing, setNameEditing] = useState<boolean>(false);
   const [newName, setNewName] = useState<string>(player.name);
-  const [activeTab, setActiveTab] = useState<'lands' | 'mana'>('lands');
 
   const updateLife = (amount: number) => {
     onUpdate({ life: player.life + amount });
@@ -80,7 +83,7 @@ function Player({ player, isActive, onUpdate, onRemove, compact }: PlayerProps) 
     onUpdate({ lands: updatedLands });
   };
 
-  const useMana = (manaType: string) => {
+  const decrementMana = (manaType: string) => {
     if (player.manaPool[manaType as keyof typeof player.manaPool] > 0) {
       const updatedManaPool = { ...player.manaPool };
       updatedManaPool[manaType as keyof typeof updatedManaPool]--;
@@ -94,144 +97,149 @@ function Player({ player, isActive, onUpdate, onRemove, compact }: PlayerProps) 
   };
 
   return (
-    <div className={`backdrop-blur-sm rounded-xl p-4 w-full transition-all duration-300 shadow-xl mb-16 ${
+    <Card className={`mb-16 w-full ${
       isActive 
-        ? 'border-2 border-amber-400 bg-gray-800/70 ring-4 ring-amber-400/30' 
-        : 'bg-gray-800/50 border border-gray-700'
+        ? 'border-primary ring-2 ring-primary/20' 
+        : 'border-border'
     }`}>
-      <div className="flex justify-between items-center mb-4">
-        {nameEditing ? (
-          <div className="w-full">
-            <input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onBlur={finishNameEdit}
-              onKeyPress={(e) => e.key === 'Enter' && finishNameEdit()}
-              autoFocus
-              className="text-lg font-bold w-[85%] p-1.5 bg-gray-700 border border-gray-600 rounded-lg text-white"
-            />
-          </div>
-        ) : (
-          <h2 
-            onClick={() => setNameEditing(true)}
-            className="text-lg font-bold cursor-pointer hover:text-amber-300 transition-colors duration-200"
+      <CardContent className="p-4">
+        <div className="flex justify-between items-center mb-4">
+          {nameEditing ? (
+            <div className="w-full">
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onBlur={finishNameEdit}
+                onKeyDown={(e) => e.key === 'Enter' && finishNameEdit()}
+                autoFocus
+                className="max-w-[85%] h-8"
+              />
+            </div>
+          ) : (
+            <h2 
+              onClick={() => setNameEditing(true)}
+              className="text-lg font-bold cursor-pointer hover:text-primary transition-colors duration-200"
+            >
+              {player.name}
+            </h2>
+          )}
+          <Button 
+            variant="destructive" 
+            size="icon" 
+            className="h-7 w-7 rounded-full"
+            onClick={onRemove}
           >
-            {player.name}
-          </h2>
-        )}
-        <button 
-          className="bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-lg transition-all duration-200 transform hover:scale-110 active:scale-95"
-          onClick={onRemove}
-        >
-          ×
-        </button>
-      </div>
-
-      <div className="flex items-center justify-center gap-2 mb-4">
-        <div className="relative flex items-center">
-          <button 
-            onClick={() => updateLife(-1)}
-            className="bg-gradient-to-r from-red-600 to-red-500 text-white w-10 h-10 rounded-full text-lg flex items-center justify-center shadow-lg transition-all duration-200 transform hover:scale-110 active:scale-95 -mr-1 z-10"
-          >
-            -
-          </button>
-          <div className="flex-shrink-0 bg-gray-700 rounded-full px-5 py-2 shadow-inner border border-gray-600">
-            <span className="text-2xl font-bold min-w-[50px] text-center text-white">{player.life}</span>
-          </div>
-          <button 
-            onClick={() => updateLife(1)}
-            className="bg-gradient-to-r from-green-500 to-green-600 text-white w-10 h-10 rounded-full text-lg flex items-center justify-center shadow-lg transition-all duration-200 transform hover:scale-110 active:scale-95 -ml-1 z-10"
-          >
-            +
-          </button>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
-      </div>
 
-      {/* Tab Selector */}
-      <div className="flex mb-3 border-b border-gray-600">
-        <button 
-          className={`flex-1 py-2 text-center font-medium ${activeTab === 'lands' ? 'text-amber-300 border-b-2 border-amber-400' : 'text-gray-400 hover:text-gray-200'}`}
-          onClick={() => setActiveTab('lands')}
-        >
-          Lands
-        </button>
-        <button 
-          className={`flex-1 py-2 text-center font-medium ${activeTab === 'mana' ? 'text-amber-300 border-b-2 border-amber-400' : 'text-gray-400 hover:text-gray-200'}`}
-          onClick={() => setActiveTab('mana')}
-        >
-          Mana Pool
-        </button>
-      </div>
-
-      {activeTab === 'lands' && (
-        <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-700 mb-1.5">
-          <div className="flex flex-wrap justify-center gap-1.5 mb-3">
-            {LAND_TYPES.map(land => (
-              <button 
-                key={land.type} 
-                onClick={() => addLand(land)}
-                className={`border border-gray-600 rounded-lg p-1.5 text-xl cursor-pointer transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm ${land.bgColor}`}
-              >
-                {land.symbol}
-              </button>
-            ))}
+        <div className="flex items-center justify-center gap-2 mb-5">
+          <div className="relative flex items-center">
+            <Button
+              variant="outline"
+              size="icon"
+              className="text-destructive border-0 rounded-full h-10 w-10 -mr-1 z-10"
+              onClick={() => updateLife(-1)}
+            >
+              <Minus className="h-5 w-5" />
+            </Button>
+            <div className="flex-shrink-0 bg-muted rounded-full px-5 py-2 border border-border">
+              <span className="text-2xl font-bold min-w-[50px] text-center">{player.life}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="text-primary border-0 rounded-full h-10 w-10 -ml-1 z-10"
+              onClick={() => updateLife(1)}
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
           </div>
+        </div>
+
+        <Tabs defaultValue="lands" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-3">
+            <TabsTrigger value="lands">Lands</TabsTrigger>
+            <TabsTrigger value="mana">Mana Pool</TabsTrigger>
+          </TabsList>
           
-          <div className="flex flex-wrap gap-1.5 justify-center">
-            {player.lands.map(land => {
-              const landType = LAND_TYPES.find(l => l.type === land.type);
-              return (
-                <div 
-                  key={land.id} 
-                  className={`w-9 h-14 border border-gray-600 rounded-lg flex items-center justify-center relative text-xl cursor-pointer bg-gray-800 hover:bg-gray-700 ${
-                    land.tapped ? 'transform rotate-90 opacity-70' : 'hover:scale-105'
-                  } transition-all duration-300`}
-                  onClick={() => toggleLand(land.id)}
-                >
-                  {landType?.symbol}
-                  <button 
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white border-none rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity duration-200 shadow-md"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeLand(land.id);
-                    }}
+          <TabsContent value="lands" className="mt-0">
+            <div className="bg-card p-3 rounded-md border border-border mb-1.5">
+              <div className="flex flex-wrap justify-center gap-1.5 mb-3">
+                {LAND_TYPES.map(land => (
+                  <Button 
+                    key={land.type} 
+                    variant="outline"
+                    size="icon"
+                    className={`h-9 w-9 ${land.bgClassName} border-input`}
+                    onClick={() => addLand(land)}
                   >
-                    ×
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'mana' && (
-        <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-700 mb-1.5">
-          <div className="flex flex-wrap gap-1.5 justify-center">
-            {MANA_TYPES.map(mana => (
-              <div 
-                key={mana.symbol} 
-                className={`flex flex-col items-center border border-gray-600 rounded-lg p-1.5 min-w-[40px] shadow-sm ${mana.bgColor}`}
-              >
-                <span className="text-lg">{mana.display}</span>
-                <span className="font-bold text-base my-0.5">{player.manaPool[mana.symbol as keyof typeof player.manaPool]}</span>
-                <button 
-                  className={`rounded-lg px-2 py-0.5 text-xs text-white transition-all duration-200 ${
-                    player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0 
-                      ? 'bg-gray-500 cursor-not-allowed opacity-50' 
-                      : 'bg-gray-700 hover:bg-gray-600 cursor-pointer transform hover:scale-105 active:scale-95'
-                  }`}
-                  onClick={() => useMana(mana.symbol)}
-                  disabled={player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0}
-                >
-                  Use
-                </button>
+                    {land.symbol}
+                  </Button>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+              
+              <div className="flex flex-wrap gap-1.5 justify-center">
+                {player.lands.map(land => {
+                  const landType = LAND_TYPES.find(l => l.type === land.type);
+                  return (
+                    <div 
+                      key={land.id} 
+                      className={`w-9 h-14 border border-input rounded-md flex items-center justify-center relative text-xl cursor-pointer bg-muted hover:bg-accent ${
+                        land.tapped ? 'transform rotate-90 opacity-70' : 'hover:scale-105'
+                      } transition-all duration-300`}
+                      onClick={() => toggleLand(land.id)}
+                    >
+                      {landType?.symbol}
+                      <Button 
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full opacity-0 hover:opacity-100 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeLand(land.id);
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="mana" className="mt-0">
+            <div className="bg-card p-3 rounded-md border border-border mb-1.5">
+              <div className="flex flex-wrap gap-1.5 justify-center">
+                {MANA_TYPES.map(mana => (
+                  <div 
+                    key={mana.symbol} 
+                    className={`flex flex-col items-center border border-input rounded-md p-1.5 min-w-[40px] ${mana.bgClassName}`}
+                  >
+                    <span className="text-lg">{mana.display}</span>
+                    <span className="font-bold text-base my-0.5">{player.manaPool[mana.symbol as keyof typeof player.manaPool]}</span>
+                    <Button 
+                      variant="secondary"
+                      size="sm"
+                      className={`h-6 px-2 py-0 text-xs ${
+                        player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0 
+                          ? 'opacity-50' 
+                          : ''
+                      }`}
+                      onClick={() => decrementMana(mana.symbol)}
+                      disabled={player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0}
+                    >
+                      Use
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }
 

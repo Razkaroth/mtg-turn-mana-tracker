@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PlayerData } from '../App';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RotateCcw } from "lucide-react";
 
 interface ChessTimerProps {
   players: PlayerData[];
@@ -14,7 +18,7 @@ function ChessTimer({ players, activePlayer, running, onTurnEnd }: ChessTimerPro
   
   const [times, setTimes] = useState<number[]>(players.map(() => defaultTime));
   const timerRef = useRef<number | null>(null);
-  const [showAllTimers, setShowAllTimers] = useState<boolean>(false);
+  const [timerView, setTimerView] = useState<'active' | 'all'>('active');
 
   // Update times array when players change
   useEffect(() => {
@@ -67,54 +71,60 @@ function ChessTimer({ players, activePlayer, running, onTurnEnd }: ChessTimerPro
   };
 
   return (
-    <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-3 mb-4 shadow-xl border border-gray-700">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-base font-bold text-amber-300">Turn Timer</h3>
-        <button 
-          onClick={() => setShowAllTimers(!showAllTimers)}
-          className="text-xs text-gray-400 hover:text-gray-300"
+    <Card className="mb-4 border-border bg-card backdrop-blur-sm">
+      <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between">
+        <CardTitle className="text-base font-bold text-primary">Turn Timer</CardTitle>
+        <Tabs 
+          defaultValue="active" 
+          value={timerView} 
+          onValueChange={(value) => setTimerView(value as 'active' | 'all')}
+          className="w-auto"
         >
-          {showAllTimers ? 'Show Less' : 'Show All'}
-        </button>
-      </div>
-      
-      {showAllTimers ? (
-        <div className="flex flex-wrap justify-center gap-2 mb-3">
-          {players.map((player, index) => (
+          <TabsList className="h-7 p-0.5">
+            <TabsTrigger value="active" className="text-xs px-2 py-0.5">Active</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs px-2 py-0.5">All</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </CardHeader>
+      <CardContent className="p-3 pt-2">
+        {timerView === 'active' ? (
+          <div className="flex justify-center mb-3">
             <div 
-              key={player.id} 
-              className={`p-2 min-w-[100px] rounded-lg text-center transition-all duration-300 ${
-                index === activePlayer 
-                  ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-gray-900 font-bold shadow' 
-                  : 'bg-gray-700 text-gray-200'
-              }`}
+              className="p-2 min-w-[150px] rounded-md text-center bg-primary text-primary-foreground font-bold shadow"
             >
-              <span className="block text-xs font-medium">{player.name}</span>
-              <span className="text-xl font-mono">{formatTime(times[index])}</span>
+              <span className="block text-xs font-medium">{players[activePlayer]?.name || "Player 1"}</span>
+              <span className="text-xl font-mono">{formatTime(times[activePlayer] || 0)}</span>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="flex justify-center mb-3">
-          <div 
-            className="p-2 min-w-[150px] rounded-lg text-center bg-gradient-to-r from-amber-500 to-yellow-500 text-gray-900 font-bold shadow"
-          >
-            <span className="block text-xs font-medium">{players[activePlayer]?.name || "Player 1"}</span>
-            <span className="text-xl font-mono">{formatTime(times[activePlayer] || 0)}</span>
           </div>
-        </div>
-      )}
-      
-      <button 
-        onClick={resetTimers}
-        className="block mx-auto bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg px-3 py-1.5 text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-1 mx-auto"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        Reset
-      </button>
-    </div>
+        ) : (
+          <div className="flex flex-wrap justify-center gap-2 mb-3">
+            {players.map((player, index) => (
+              <div 
+                key={player.id} 
+                className={`p-2 min-w-[100px] rounded-md text-center transition-all duration-300 ${
+                  index === activePlayer 
+                    ? 'bg-primary text-primary-foreground font-bold shadow' 
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                <span className="block text-xs font-medium">{player.name}</span>
+                <span className="text-xl font-mono">{formatTime(times[index])}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        <Button 
+          onClick={resetTimers}
+          variant="outline"
+          size="sm"
+          className="w-full text-sm"
+        >
+          <RotateCcw className="h-3.5 w-3.5 mr-1" />
+          Reset
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
