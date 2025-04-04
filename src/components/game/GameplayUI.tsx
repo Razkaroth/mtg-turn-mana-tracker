@@ -9,6 +9,7 @@ import PhantomTurnBanner from './PhantomTurnBanner';
 import { PlayerData } from '../../types';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { HelpTooltip } from '../ui/help-tooltip';
 
 export const GameplayUI: React.FC = () => {
   const { 
@@ -194,11 +195,25 @@ export const GameplayUI: React.FC = () => {
                 </span>
               )}
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-1">
               <span className="text-muted-foreground mr-2">Viewing:</span>
               <span className="font-medium">
                 {displayedPlayer.name}
               </span>
+              <HelpTooltip 
+                content={
+                  <div className="space-y-2">
+                    <p><strong>Active Player:</strong> Whose turn it is now</p>
+                    <p><strong>Viewing:</strong> The player details you're currently seeing below</p>
+                    <p>Each player takes turns. When a player's turn begins, their lands automatically untap and their mana pool is filled.</p>
+                    {isSinglePlayerMode && (
+                      <p className="text-primary-foreground/80 bg-primary/10 p-1.5 rounded text-xs">
+                        In single player mode, opponents' turns are combined into a single "Opponents' Phase"
+                      </p>
+                    )}
+                  </div>
+                }
+              />
             </div>
           </div>
           

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { PlusCircle, Trash2, User } from "lucide-react";
 import { useLongPress } from "@/lib/use-long-press";
+import { HelpTooltip } from '../ui/help-tooltip';
 
 interface ProfileSelectorProps {
   onSelectProfile: (profile: Profile) => void;
@@ -116,7 +117,19 @@ const ProfileSelector: React.FC<ProfileSelectorProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Player Profiles</h2>
+        <div className="flex items-center gap-1">
+          <h2 className="text-xl font-bold">Player Profiles</h2>
+          <HelpTooltip 
+            content={
+              <div className="space-y-2">
+                <p><strong>Player Profiles:</strong> Save player information to use across multiple games.</p>
+                <p><strong>Creating a Profile:</strong> Click "New Profile" to create a new player profile.</p>
+                <p><strong>Managing Profiles:</strong> Long press or tap the edit button on a profile to rename or delete it.</p>
+                <p className="text-xs text-muted-foreground mt-1">Profiles are saved locally and will persist between sessions.</p>
+              </div>
+            }
+          />
+        </div>
         
         {/* Create Profile Dialog */}
         <Dialog open={isCreating} onOpenChange={setIsCreating}>

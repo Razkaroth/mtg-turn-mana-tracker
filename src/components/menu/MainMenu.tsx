@@ -27,6 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
 import SettingsPanel from '../game/SettingsPanel';
+import { HelpTooltip } from '../ui/help-tooltip';
 
 interface SelectedPlayer {
   tempId: number;
@@ -279,7 +280,19 @@ export const MainMenu: React.FC = () => {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Game Setup</span>
+              <div className="flex items-center gap-1">
+                <span>Game Setup</span>
+                <HelpTooltip 
+                  content={
+                    <div className="space-y-2">
+                      <p><strong>Game Modes:</strong></p>
+                      <p><strong>Single Player Mode:</strong> Play against AI opponents. You'll take your turn normally, while opponent turns will be simulated.</p>
+                      <p><strong>Multiplayer Mode:</strong> Play with friends, passing the device between players.</p>
+                      <p className="text-xs text-muted-foreground mt-2">You can add as many players as you want, and select player profiles to track stats across games.</p>
+                    </div>
+                  }
+                />
+              </div>
               {duplicateProfileWarning && (
                 <div className="text-sm text-yellow-500 flex items-center gap-1">
                   <Info className="h-4 w-4" />

@@ -6,6 +6,7 @@ import { GameScreen } from './components/game/GameScreen'
 import { MainMenu } from './components/menu/MainMenu'
 import { useGame } from './context/GameContext'
 import { Toaster } from 'sonner'
+import { TooltipProvider } from './components/ui/tooltip'
 
 // Wrapper component to access the game context
 const GameContainer: React.FC = () => {
@@ -17,11 +18,13 @@ const GameContainer: React.FC = () => {
 function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="auto-magic-ator-theme">
-      <ProfileProvider>
-        <GameProvider>
-          <GameContainer />
-        </GameProvider>
-      </ProfileProvider>
+      <TooltipProvider>
+        <ProfileProvider>
+          <GameProvider>
+            <GameContainer />
+          </GameProvider>
+        </ProfileProvider>
+      </TooltipProvider>
       <Toaster position="top-center" richColors />
     </ThemeProvider>
   )
