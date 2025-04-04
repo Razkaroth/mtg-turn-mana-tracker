@@ -14,6 +14,7 @@ function ChessTimer({ players, activePlayer, running, onTurnEnd }: ChessTimerPro
   
   const [times, setTimes] = useState<number[]>(players.map(() => defaultTime));
   const timerRef = useRef<number | null>(null);
+  const [showAllTimers, setShowAllTimers] = useState<boolean>(false);
 
   // Update times array when players change
   useEffect(() => {
@@ -66,33 +67,52 @@ function ChessTimer({ players, activePlayer, running, onTurnEnd }: ChessTimerPro
   };
 
   return (
-    <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-5 mb-8 shadow-xl border border-gray-700">
-      <h3 className="text-center font-bold text-xl mb-5 text-amber-300">Turn Timer</h3>
-      
-      <div className="flex flex-wrap justify-center gap-3 mb-5">
-        {players.map((player, index) => (
-          <div 
-            key={player.id} 
-            className={`p-3 min-w-[130px] rounded-lg text-center transition-all duration-300 transform ${
-              index === activePlayer 
-                ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-gray-900 font-bold shadow-lg scale-105' 
-                : 'bg-gray-700 text-gray-200'
-            }`}
-          >
-            <span className="block mb-1 text-sm font-medium">{player.name}</span>
-            <span className="text-2xl font-mono">{formatTime(times[index])}</span>
-          </div>
-        ))}
+    <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-3 mb-4 shadow-xl border border-gray-700">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-base font-bold text-amber-300">Turn Timer</h3>
+        <button 
+          onClick={() => setShowAllTimers(!showAllTimers)}
+          className="text-xs text-gray-400 hover:text-gray-300"
+        >
+          {showAllTimers ? 'Show Less' : 'Show All'}
+        </button>
       </div>
+      
+      {showAllTimers ? (
+        <div className="flex flex-wrap justify-center gap-2 mb-3">
+          {players.map((player, index) => (
+            <div 
+              key={player.id} 
+              className={`p-2 min-w-[100px] rounded-lg text-center transition-all duration-300 ${
+                index === activePlayer 
+                  ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-gray-900 font-bold shadow' 
+                  : 'bg-gray-700 text-gray-200'
+              }`}
+            >
+              <span className="block text-xs font-medium">{player.name}</span>
+              <span className="text-xl font-mono">{formatTime(times[index])}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex justify-center mb-3">
+          <div 
+            className="p-2 min-w-[150px] rounded-lg text-center bg-gradient-to-r from-amber-500 to-yellow-500 text-gray-900 font-bold shadow"
+          >
+            <span className="block text-xs font-medium">{players[activePlayer]?.name || "Player 1"}</span>
+            <span className="text-xl font-mono">{formatTime(times[activePlayer] || 0)}</span>
+          </div>
+        </div>
+      )}
       
       <button 
         onClick={resetTimers}
-        className="block mx-auto bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg px-4 py-2 transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2 mx-auto"
+        className="block mx-auto bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg px-3 py-1.5 text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-1 mx-auto"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
-        Reset Timers
+        Reset
       </button>
     </div>
   );
