@@ -58,7 +58,7 @@ const Player: React.FC<PlayerProps> = ({
 }) => {
   const [nameEditing, setNameEditing] = useState<boolean>(false);
   const [newName, setNewName] = useState<string>(player.name);
-  const [activeTab, setActiveTab] = useState<string>("lands");
+  const [activeTab, setActiveTab] = useState<string>("mana");
 
   const updateLife = (amount: number) => {
     onUpdate({ life: player.life + amount });
@@ -79,19 +79,36 @@ const Player: React.FC<PlayerProps> = ({
   };
 
   const toggleLand = (landId: number) => {
-    const updatedLands = player.lands.map(land => {
-      if (land.id === landId) {
-        if (!land.tapped) {
-          // When tapping a land, add mana to the pool
-          const updatedManaPool = { ...player.manaPool };
-          updatedManaPool[land.produces as keyof typeof updatedManaPool]++;
-          onUpdate({ manaPool: updatedManaPool });
-        }
-        return { ...land, tapped: !land.tapped };
-      }
-      return land;
-    });
-    onUpdate({ lands: updatedLands });
+    // Get the land being toggled
+    const land = player.lands.find(l => l.id === landId);
+    if (!land) return;
+
+    // If we're tapping the land (currently untapped), add mana to the pool
+    if (!land.tapped) {
+      const updatedManaPool = { ...player.manaPool };
+      updatedManaPool[land.produces as keyof typeof updatedManaPool]++;
+      
+      // Update mana pool and toggle the land
+      onUpdate({ 
+        manaPool: updatedManaPool,
+        lands: player.lands.map(l => {
+          if (l.id === landId) {
+            return { ...l, tapped: true };
+          }
+          return l;
+        })
+      });
+    } else {
+      // Just toggle the land to untapped without affecting mana pool
+      onUpdate({
+        lands: player.lands.map(l => {
+          if (l.id === landId) {
+            return { ...l, tapped: false };
+          }
+          return l;
+        })
+      });
+    }
   };
 
   const decrementMana = (manaType: string) => {
@@ -100,6 +117,12 @@ const Player: React.FC<PlayerProps> = ({
       updatedManaPool[manaType as keyof typeof updatedManaPool]--;
       onUpdate({ manaPool: updatedManaPool });
     }
+  };
+
+  const incrementMana = (manaType: string) => {
+    const updatedManaPool = { ...player.manaPool };
+    updatedManaPool[manaType as keyof typeof updatedManaPool]++;
+    onUpdate({ manaPool: updatedManaPool });
   };
 
   const finishNameEdit = () => {
@@ -215,25 +238,80 @@ const Player: React.FC<PlayerProps> = ({
 
         {/* Tabs */}
         <Tabs 
-          defaultValue="lands" 
+          defaultValue="mana" 
           value={activeTab}
           onValueChange={setActiveTab}
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-2 mb-2 bg-muted/50">
             <TabsTrigger 
-              value="lands" 
-              className={activeTab === "lands" ? "data-[state=active]:bg-card" : ""}
-            >
-              Lands
-            </TabsTrigger>
-            <TabsTrigger 
               value="mana" 
               className={`${totalMana > 0 ? "after:content-[''] after:absolute after:right-2 after:top-1.5 after:h-2 after:w-2 after:rounded-full after:bg-primary after:animate-pulse" : ""} ${activeTab === "mana" ? "data-[state=active]:bg-card" : ""}`}
             >
               Mana Pool
             </TabsTrigger>
+            <TabsTrigger 
+              value="lands" 
+              className={activeTab === "lands" ? "data-[state=active]:bg-card" : ""}
+            >
+              Lands
+            </TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="mana" className="mt-0 rounded-md bg-card/30 pt-3 px-3 pb-2">
+            {totalMana === 0 ? (
+              <div className="text-center py-4 text-sm text-muted-foreground">
+                <Droplet className="h-5 w-5 mx-auto mb-1 opacity-40" />
+                <p>Your mana pool is empty</p>
+                <p className="text-xs mt-1">Tap lands to add mana</p>
+              </div>
+            ) : (
+              <div className="bg-card/60 p-3 rounded-md border border-border/30 mb-1.5">
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {MANA_TYPES.map(mana => (
+                    <div 
+                      key={mana.symbol} 
+                      className={`flex flex-col items-center border border-border/40 rounded-md p-2 min-w-[70px] ${mana.bgClassName}`}
+                    >
+                      <span className="text-lg">{mana.display}</span>
+                      <span className={`font-bold text-xl my-1 ${mana.iconColor}`}>
+                        {player.manaPool[mana.symbol as keyof typeof player.manaPool]}
+                      </span>
+                      <div className="flex gap-1 mt-1">
+                        <Button 
+                          variant="ghost"
+                          size="icon"
+                          className={`h-7 w-7 bg-destructive/10 hover:bg-destructive/20 text-destructive ${
+                            player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0 
+                              ? 'opacity-50 cursor-not-allowed' 
+                              : ''
+                          }`}
+                          onClick={() => decrementMana(mana.symbol)}
+                          disabled={player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0}
+                          title="Use mana"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <Button 
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 bg-primary/10 hover:bg-primary/20 text-primary"
+                          onClick={() => incrementMana(mana.symbol)}
+                          title="Add mana"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-3 pt-2 border-t border-border/30 text-center text-xs text-muted-foreground">
+                  <p>Your mana pool is filled at the beginning of your turn based on your lands.</p>
+                </div>
+              </div>
+            )}
+          </TabsContent>
           
           <TabsContent value="lands" className="mt-0 rounded-md bg-card/30 pt-3 px-3 pb-2">
             {/* Land type buttons */}
@@ -291,50 +369,6 @@ const Player: React.FC<PlayerProps> = ({
                 })
               )}
             </div>
-          </TabsContent>
-          
-          <TabsContent value="mana" className="mt-0 rounded-md bg-card/30 pt-3 px-3 pb-2">
-            {totalMana === 0 ? (
-              <div className="text-center py-4 text-sm text-muted-foreground">
-                <Droplet className="h-5 w-5 mx-auto mb-1 opacity-40" />
-                <p>Your mana pool is empty</p>
-                <p className="text-xs mt-1">Tap lands to add mana</p>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-1.5 justify-center">
-                {MANA_TYPES.map(mana => {
-                  const count = player.manaPool[mana.symbol as keyof typeof player.manaPool];
-                  if (count === 0) return null;
-                  
-                  return (
-                    <motion.div 
-                      key={mana.symbol}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`flex flex-col items-center border border-input/30 rounded-lg p-1.5 min-w-[38px] ${mana.bgClassName} transition-all hover:shadow-sm`}
-                    >
-                      <span className={`text-base ${mana.iconColor}`}>{mana.display}</span>
-                      <motion.span 
-                        key={count}
-                        initial={{ scale: 1.3 }}
-                        animate={{ scale: 1 }}
-                        className="font-bold text-sm my-0.5"
-                      >
-                        {count}
-                      </motion.span>
-                      <Button 
-                        variant="secondary"
-                        size="sm"
-                        className={`h-5 px-2 py-0 text-xs bg-background/50 hover:bg-background`}
-                        onClick={() => decrementMana(mana.symbol)}
-                      >
-                        Use
-                      </Button>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
           </TabsContent>
         </Tabs>
       </CardContent>

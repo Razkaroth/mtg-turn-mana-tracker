@@ -53,6 +53,25 @@ export const GameplayUI: React.FC = () => {
     if (!timerRunning) {
       setTimerRunning(true);
     }
+    
+    // Get the next player before calling nextTurn
+    const nextPlayerIndex = (activePlayerIndex + 1) % players.length;
+    const nextPlayer = players[nextPlayerIndex];
+    
+    // Only show notification if they have lands to tap
+    if (nextPlayer && nextPlayer.lands.length > 0) {
+      setTimeout(() => {
+        toast.success(
+          `${nextPlayer.name}'s mana pool filled`,
+          {
+            description: `${nextPlayer.lands.length} land${nextPlayer.lands.length > 1 ? 's' : ''} auto-tapped for mana.`,
+            duration: 3000,
+            id: "mana-filled", // Use ID to prevent duplicate toasts
+          }
+        );
+      }, 100); // Small delay to ensure it shows after state updates
+    }
+    
     nextTurn();
   };
 
@@ -62,6 +81,24 @@ export const GameplayUI: React.FC = () => {
     if (!timerRunning) {
       setTimerRunning(true);
     }
+
+    // Get the real player before calling advancePhantomTurn
+    const realPlayer = players[actualPlayerIndex];
+    
+    // Only show notification if they have lands to tap
+    if (realPlayer && realPlayer.lands.length > 0) {
+      setTimeout(() => {
+        toast.success(
+          `Your mana pool filled`,
+          {
+            description: `${realPlayer.lands.length} land${realPlayer.lands.length > 1 ? 's' : ''} auto-tapped for mana.`,
+            duration: 3000,
+            id: "mana-filled", // Use ID to prevent duplicate toasts
+          }
+        );
+      }, 100); // Small delay to ensure it shows after state updates
+    }
+    
     advancePhantomTurn();
   };
 
