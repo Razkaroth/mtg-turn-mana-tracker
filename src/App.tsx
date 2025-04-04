@@ -6,6 +6,7 @@ import { PlusCircle, Play, Pause, ArrowRight, ArrowLeft } from "lucide-react"
 import { ThemeProvider } from "@/components/ui/theme-provider"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { PlayerSelector } from './components/PlayerSelector'
+import { MainMenu } from './components/MainMenu'
 
 // Define our types
 interface Land {
@@ -30,9 +31,11 @@ export interface PlayerData {
   life: number;
   lands: Land[];
   manaPool: ManaPool;
+  profileId?: string; // Link to profile id
 }
 
 function AppContent() {
+  const [gameStarted, setGameStarted] = useState(false);
   const [players, setPlayers] = useState<PlayerData[]>([
     { id: 1, name: 'Player 1', life: 20, lands: [], manaPool: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } },
     { id: 2, name: 'Player 2', life: 20, lands: [], manaPool: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } },
@@ -41,6 +44,14 @@ function AppContent() {
   const [timerRunning, setTimerRunning] = useState<boolean>(false);
   const [displayedPlayer, setDisplayedPlayer] = useState<number>(0);
   
+  // Handle starting the game with configured players
+  const handleStartGame = (configuredPlayers: PlayerData[]) => {
+    setPlayers(configuredPlayers);
+    setActivePlayer(0);
+    setDisplayedPlayer(0);
+    setGameStarted(true);
+  };
+
   const addPlayer = () => {
     const newId = players.length > 0 ? Math.max(...players.map(p => p.id)) + 1 : 1;
     setPlayers([...players, { 
@@ -71,7 +82,7 @@ function AppContent() {
       player.id === id ? { ...player, ...updatedData } : player
     ));
   };
-
+  
   const nextTurn = () => {
     // Reset mana pool for current player
     const updatedPlayers = [...players];
@@ -88,6 +99,12 @@ function AppContent() {
     setDisplayedPlayer(nextActivePlayer);
   };
 
+  // If game hasn't started yet, show the main menu
+  if (!gameStarted) {
+    return <MainMenu onStartGame={handleStartGame} />;
+  }
+
+  // Game UI
   return (
     <div className="min-h-screen bg-background text-foreground p-4 pt-3 pb-0 font-sans flex flex-col justify-between">
       <div className="max-w-sm mx-auto w-full pb-20">
