@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Play, Pause, ArrowRight, SkipForward } from "lucide-react";
+import { Play, Pause, ArrowRight, SkipForward } from "lucide-react";
 import { useGame } from '../../context/GameContext';
 import Player from '../player/Player';
 import ChessTimer from '../timer/ChessTimer';
@@ -17,7 +17,6 @@ export const GameplayUI: React.FC = () => {
     activePlayerIndex, 
     displayedPlayerIndex, 
     timerRunning, 
-    addPlayer, 
     removePlayer, 
     updatePlayer, 
     nextTurn, 
@@ -111,18 +110,7 @@ export const GameplayUI: React.FC = () => {
         className="flex-none p-4 pb-2 border-b border-border/40 bg-background/80 backdrop-blur-sm z-10"
       >
         {/* Game controls */}
-        <div className="flex justify-center gap-2 max-w-sm mx-auto">
-          <Button 
-            onClick={addPlayer}
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-1 px-3 border border-border/40 hover:bg-background hover:border-border"
-            disabled={isSinglePlayerMode} // Disable adding players in single player mode
-          >
-            <PlusCircle className="h-4 w-4 text-primary/70" />
-            <span className="text-sm">Add</span>
-          </Button>
-          
+        <div className="flex justify-center gap-2 max-w-sm mx-auto">          
           <Button 
             onClick={() => setTimerRunning(!timerRunning)}
             variant={timerRunning ? "secondary" : "outline"}
