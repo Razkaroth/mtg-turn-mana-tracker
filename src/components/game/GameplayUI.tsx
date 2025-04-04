@@ -40,7 +40,7 @@ export const GameplayUI: React.FC = () => {
         `Opponents' Phase`,
         {
           description: "All other players are taking their turns. You can play instants or end this phase.",
-          duration: 3000,
+          duration: 2000,
           id: "phantom-phase", // Use ID to prevent duplicate toasts
         }
       );
@@ -65,7 +65,7 @@ export const GameplayUI: React.FC = () => {
           `${nextPlayer.name}'s mana pool filled`,
           {
             description: `${nextPlayer.lands.length} land${nextPlayer.lands.length > 1 ? 's' : ''} auto-tapped for mana.`,
-            duration: 3000,
+            duration: 2000,
             id: "mana-filled", // Use ID to prevent duplicate toasts
           }
         );
@@ -92,7 +92,7 @@ export const GameplayUI: React.FC = () => {
           `Your mana pool filled`,
           {
             description: `${realPlayer.lands.length} land${realPlayer.lands.length > 1 ? 's' : ''} auto-tapped for mana.`,
-            duration: 3000,
+            duration: 2000,
             id: "mana-filled", // Use ID to prevent duplicate toasts
           }
         );

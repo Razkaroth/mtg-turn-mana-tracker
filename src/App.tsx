@@ -25,7 +25,7 @@ function App() {
           </GameProvider>
         </ProfileProvider>
       </TooltipProvider>
-      <Toaster position="top-center" richColors />
+      <Toaster position="bottom-center" richColors />
     </ThemeProvider>
   )
 }
