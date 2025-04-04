@@ -54,6 +54,21 @@ export const GameplayUI: React.FC = () => {
       setTimerRunning(true);
     }
     nextTurn();
+
+    // Show a toast notification about mana pool being filled on the next turn
+    const nextPlayerIndex = (activePlayerIndex + 1) % players.length;
+    const nextPlayer = players[nextPlayerIndex];
+    
+    if (nextPlayer && nextPlayer.lands.length > 0) {
+      toast.success(
+        `${nextPlayer.name}'s mana pool filled`,
+        {
+          description: `${nextPlayer.lands.length} land${nextPlayer.lands.length > 1 ? 's' : ''} auto-tapped for mana.`,
+          duration: 3000,
+          id: "mana-filled", // Use ID to prevent duplicate toasts
+        }
+      );
+    }
   };
 
   // Handle phantom turn advancement with auto-resume timer
@@ -63,6 +78,20 @@ export const GameplayUI: React.FC = () => {
       setTimerRunning(true);
     }
     advancePhantomTurn();
+
+    // Show a toast notification about mana pool being filled for the real player
+    const realPlayer = players[actualPlayerIndex];
+    
+    if (realPlayer && realPlayer.lands.length > 0) {
+      toast.success(
+        `Your mana pool filled`,
+        {
+          description: `${realPlayer.lands.length} land${realPlayer.lands.length > 1 ? 's' : ''} auto-tapped for mana.`,
+          duration: 3000,
+          id: "mana-filled", // Use ID to prevent duplicate toasts
+        }
+      );
+    }
   };
 
   return (
