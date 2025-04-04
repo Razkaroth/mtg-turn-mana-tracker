@@ -70,47 +70,61 @@ function App() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 font-sans">
-      <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">MTG Companion</h1>
-      
-      <div className="flex justify-center gap-4 mb-6">
-        <button 
-          onClick={addPlayer}
-          className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded"
-        >
-          Add Player
-        </button>
-        <button 
-          onClick={() => setTimerRunning(!timerRunning)}
-          className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded"
-        >
-          {timerRunning ? 'Pause Timer' : 'Start Timer'}
-        </button>
-        <button 
-          onClick={nextTurn}
-          className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded"
-        >
-          Next Turn
-        </button>
-      </div>
-      
-      <ChessTimer 
-        players={players} 
-        activePlayer={activePlayer} 
-        running={timerRunning}
-        onTurnEnd={nextTurn}
-      />
-      
-      <div className="flex flex-wrap gap-5 justify-center">
-        {players.map((player, index) => (
-          <Player
-            key={player.id}
-            player={player}
-            isActive={index === activePlayer}
-            onUpdate={(updatedData) => updatePlayer(player.id, updatedData)}
-            onRemove={() => removePlayer(player.id)}
-          />
-        ))}
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 p-6 font-sans text-gray-100">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-8 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-yellow-500">
+          MTG Companion
+        </h1>
+        
+        <div className="flex flex-wrap justify-center gap-3 mb-8">
+          <button 
+            onClick={addPlayer}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-5 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Player
+          </button>
+          <button 
+            onClick={() => setTimerRunning(!timerRunning)}
+            className={`font-semibold py-2 px-5 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2
+              ${timerRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={timerRunning ? "M10 9v6m4-6v6M9 4h6v16H9V4z" : "M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"} />
+            </svg>
+            {timerRunning ? 'Pause Timer' : 'Start Timer'}
+          </button>
+          <button 
+            onClick={nextTurn}
+            className="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-5 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+            Next Turn
+          </button>
+        </div>
+        
+        <ChessTimer 
+          players={players} 
+          activePlayer={activePlayer} 
+          running={timerRunning}
+          onTurnEnd={nextTurn}
+        />
+        
+        <div className="flex flex-wrap gap-6 justify-center">
+          {players.map((player, index) => (
+            <Player
+              key={player.id}
+              player={player}
+              isActive={index === activePlayer}
+              onUpdate={(updatedData) => updatePlayer(player.id, updatedData)}
+              onRemove={() => removePlayer(player.id)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   )
