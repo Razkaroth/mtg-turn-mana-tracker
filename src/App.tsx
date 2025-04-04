@@ -5,6 +5,7 @@ import { ProfileProvider } from './context/ProfileContext'
 import { GameScreen } from './components/game/GameScreen'
 import { MainMenu } from './components/menu/MainMenu'
 import { useGame } from './context/GameContext'
+import { Toaster } from 'sonner'
 
 // Wrapper component to access the game context
 const GameContainer: React.FC = () => {
@@ -21,6 +22,7 @@ function App() {
           <GameContainer />
         </GameProvider>
       </ProfileProvider>
+      <Toaster position="top-center" richColors />
     </ThemeProvider>
   )
 }

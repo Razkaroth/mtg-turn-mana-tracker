@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Minus, X } from "lucide-react";
+import { Plus, Minus, X, Ghost } from "lucide-react";
 
 interface ManaType {
   symbol: string;
@@ -25,6 +25,7 @@ interface PlayerProps {
   isActive: boolean;
   onUpdate: (updatedData: Partial<PlayerData>) => void;
   onRemove: () => void;
+  isMinimal?: boolean; // For minimal display of phantom players
 }
 
 const MANA_TYPES: ManaType[] = [
@@ -45,7 +46,13 @@ const LAND_TYPES: LandType[] = [
   { type: 'Wastes', produces: 'C', symbol: '💎', bgClassName: 'bg-muted' }
 ];
 
-const Player: React.FC<PlayerProps> = ({ player, isActive, onUpdate, onRemove }) => {
+const Player: React.FC<PlayerProps> = ({ 
+  player, 
+  isActive, 
+  onUpdate, 
+  onRemove,
+  isMinimal = false 
+}) => {
   const [nameEditing, setNameEditing] = useState<boolean>(false);
   const [newName, setNewName] = useState<string>(player.name);
 
@@ -96,14 +103,40 @@ const Player: React.FC<PlayerProps> = ({ player, isActive, onUpdate, onRemove })
     setNameEditing(false);
   };
 
+  // If minimal display is requested (for phantom players), show a simplified card
+  if (isMinimal) {
+    return (
+      <Card className={`mb-3 w-full ${
+        isActive 
+          ? 'border-primary ring-2 ring-primary/20' 
+          : 'border-border'
+      }`}>
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Ghost className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-md font-medium">{player.name}</h3>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-muted-foreground">Life:</span>
+                <span className="font-bold">{player.life}</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className={`mb-16 w-full ${
+    <Card className={`mb-6 w-full ${
       isActive 
         ? 'border-primary ring-2 ring-primary/20' 
         : 'border-border'
     }`}>
-      <CardContent className="p-4">
-        <div className="flex justify-between items-center mb-4">
+      <CardContent className="p-3">
+        <div className="flex justify-between items-center mb-2">
           {nameEditing ? (
             <div className="w-full">
               <Input
@@ -133,7 +166,7 @@ const Player: React.FC<PlayerProps> = ({ player, isActive, onUpdate, onRemove })
           </Button>
         </div>
 
-        <div className="flex items-center justify-center gap-2 mb-5">
+        <div className="flex items-center justify-center gap-2 mb-3">
           <div className="relative flex items-center">
             <Button
               variant="outline"
@@ -158,20 +191,20 @@ const Player: React.FC<PlayerProps> = ({ player, isActive, onUpdate, onRemove })
         </div>
 
         <Tabs defaultValue="lands" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-3">
+          <TabsList className="grid w-full grid-cols-2 mb-2">
             <TabsTrigger value="lands">Lands</TabsTrigger>
             <TabsTrigger value="mana">Mana Pool</TabsTrigger>
           </TabsList>
           
           <TabsContent value="lands" className="mt-0">
-            <div className="bg-card p-3 rounded-md border border-border mb-1.5">
-              <div className="flex flex-wrap justify-center gap-1.5 mb-3">
+            <div className="bg-card p-2 rounded-md border border-border mb-1">
+              <div className="flex flex-wrap justify-center gap-1 mb-2">
                 {LAND_TYPES.map(land => (
                   <Button 
                     key={land.type} 
                     variant="outline"
                     size="icon"
-                    className={`h-9 w-9 ${land.bgClassName} border-input`}
+                    className={`h-8 w-8 ${land.bgClassName} border-input`}
                     onClick={() => addLand(land)}
                   >
                     {land.symbol}
@@ -179,13 +212,13 @@ const Player: React.FC<PlayerProps> = ({ player, isActive, onUpdate, onRemove })
                 ))}
               </div>
               
-              <div className="flex flex-wrap gap-1.5 justify-center">
+              <div className="flex flex-wrap gap-1 justify-center">
                 {player.lands.map(land => {
                   const landType = LAND_TYPES.find(l => l.type === land.type);
                   return (
                     <div 
                       key={land.id} 
-                      className={`w-9 h-14 border border-input rounded-md flex items-center justify-center relative text-xl cursor-pointer bg-muted hover:bg-accent ${
+                      className={`w-8 h-12 border border-input rounded-md flex items-center justify-center relative text-lg cursor-pointer bg-muted hover:bg-accent ${
                         land.tapped ? 'transform rotate-90 opacity-70' : 'hover:scale-105'
                       } transition-all duration-300`}
                       onClick={() => toggleLand(land.id)}
@@ -210,19 +243,19 @@ const Player: React.FC<PlayerProps> = ({ player, isActive, onUpdate, onRemove })
           </TabsContent>
           
           <TabsContent value="mana" className="mt-0">
-            <div className="bg-card p-3 rounded-md border border-border mb-1.5">
-              <div className="flex flex-wrap gap-1.5 justify-center">
+            <div className="bg-card p-2 rounded-md border border-border mb-1">
+              <div className="flex flex-wrap gap-1 justify-center">
                 {MANA_TYPES.map(mana => (
                   <div 
                     key={mana.symbol} 
-                    className={`flex flex-col items-center border border-input rounded-md p-1.5 min-w-[40px] ${mana.bgClassName}`}
+                    className={`flex flex-col items-center border border-input rounded-md p-1 min-w-[36px] ${mana.bgClassName}`}
                   >
-                    <span className="text-lg">{mana.display}</span>
-                    <span className="font-bold text-base my-0.5">{player.manaPool[mana.symbol as keyof typeof player.manaPool]}</span>
+                    <span className="text-base">{mana.display}</span>
+                    <span className="font-bold text-sm my-0.5">{player.manaPool[mana.symbol as keyof typeof player.manaPool]}</span>
                     <Button 
                       variant="secondary"
                       size="sm"
-                      className={`h-6 px-2 py-0 text-xs ${
+                      className={`h-5 px-2 py-0 text-xs ${
                         player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0 
                           ? 'opacity-50' 
                           : ''

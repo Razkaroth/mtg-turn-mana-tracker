@@ -9,14 +9,21 @@ interface GameContextType {
   displayedPlayerIndex: number;
   timerRunning: boolean;
   hasSavedGame: boolean;
+  isSinglePlayerMode: boolean;
+  isPhantomTurn: boolean;
+  actualPlayerIndex: number;
+  visiblePlayers: PlayerData[];
+  phantomPlayers: PlayerData[]; // New property to access phantom players
+  isPhantomPhase: boolean; // New property to indicate the combined phantom phase
   
   // Game actions
-  startGame: (players: PlayerData[]) => void;
+  startGame: (players: PlayerData[], singlePlayerMode?: boolean, actualPlayerIndex?: number) => void;
   resetGame: () => void;
   addPlayer: () => void;
   removePlayer: (id: number) => void;
   updatePlayer: (id: number, updatedData: Partial<PlayerData>) => void;
   nextTurn: () => void;
+  advancePhantomTurn: () => void;
   setTimerRunning: (isRunning: boolean) => void;
   setDisplayedPlayerIndex: (index: number) => void;
   endGame: () => void;
@@ -38,6 +45,9 @@ interface SavedGameState {
   players: PlayerData[];
   activePlayerIndex: number;
   displayedPlayerIndex: number;
+  isSinglePlayerMode: boolean;
+  actualPlayerIndex: number;
+  isPhantomPhase: boolean; // Add the new property to saved state
   timestamp: number;
 }
 
@@ -50,6 +60,23 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [displayedPlayerIndex, setDisplayedPlayerIndex] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [hasSavedGame, setHasSavedGame] = useState(false);
+  const [isSinglePlayerMode, setIsSinglePlayerMode] = useState(false);
+  const [actualPlayerIndex, setActualPlayerIndex] = useState(0);
+  const [isPhantomPhase, setIsPhantomPhase] = useState(false);
+  
+  // Derived state for phantom turns
+  const isPhantomTurn = isSinglePlayerMode && 
+    (isPhantomPhase || activePlayerIndex !== actualPlayerIndex);
+  
+  // Visible players (filter out phantom players in single player mode)
+  const visiblePlayers = isSinglePlayerMode 
+    ? [players[actualPlayerIndex]] 
+    : players;
+    
+  // Get all phantom players in single player mode
+  const phantomPlayers = isSinglePlayerMode
+    ? players.filter((_, index) => index !== actualPlayerIndex)
+    : [];
 
   // Check for saved game on initial load
   useEffect(() => {
@@ -63,12 +90,15 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         players,
         activePlayerIndex,
         displayedPlayerIndex,
+        isSinglePlayerMode,
+        actualPlayerIndex,
+        isPhantomPhase,
         timestamp: Date.now()
       };
       localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
       setHasSavedGame(true);
     }
-  }, [gameStarted, players, activePlayerIndex, displayedPlayerIndex]);
+  }, [gameStarted, players, activePlayerIndex, displayedPlayerIndex, isSinglePlayerMode, actualPlayerIndex, isPhantomPhase]);
 
   // Check if a saved game exists in localStorage
   const checkForSavedGame = () => {
@@ -77,11 +107,18 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // Start a new game with the given players
-  const startGame = (configuredPlayers: PlayerData[]) => {
+  const startGame = (
+    configuredPlayers: PlayerData[], 
+    singlePlayerMode: boolean = false, 
+    playerPosition: number = 0
+  ) => {
     setPlayers(configuredPlayers);
-    setActivePlayerIndex(0);
-    setDisplayedPlayerIndex(0);
+    setActivePlayerIndex(singlePlayerMode ? playerPosition : 0);
+    setDisplayedPlayerIndex(singlePlayerMode ? playerPosition : 0);
     setTimerRunning(false);
+    setIsSinglePlayerMode(singlePlayerMode);
+    setActualPlayerIndex(playerPosition);
+    setIsPhantomPhase(false);
     setGameStarted(true);
   };
 
@@ -92,6 +129,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActivePlayerIndex(0);
     setDisplayedPlayerIndex(0);
     setTimerRunning(false);
+    setIsSinglePlayerMode(false);
+    setActualPlayerIndex(0);
+    setIsPhantomPhase(false);
     localStorage.removeItem(GAME_STATE_KEY);
     setHasSavedGame(false);
   };
@@ -111,6 +151,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setPlayers(savedGame.players);
         setActivePlayerIndex(savedGame.activePlayerIndex);
         setDisplayedPlayerIndex(savedGame.displayedPlayerIndex);
+        setIsSinglePlayerMode(savedGame.isSinglePlayerMode || false);
+        setActualPlayerIndex(savedGame.actualPlayerIndex || 0);
+        setIsPhantomPhase(savedGame.isPhantomPhase || false);
         setGameStarted(true);
         setTimerRunning(false);
       } catch (error) {
@@ -147,6 +190,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (indexToRemove <= displayedPlayerIndex && displayedPlayerIndex > 0) {
       setDisplayedPlayerIndex(displayedPlayerIndex - 1);
     }
+    
+    // Update actual player index in single player mode if necessary
+    if (isSinglePlayerMode && indexToRemove <= actualPlayerIndex && actualPlayerIndex > 0) {
+      setActualPlayerIndex(actualPlayerIndex - 1);
+    }
   };
 
   // Update a player's data
@@ -156,21 +204,60 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     ));
   };
 
+  // Reset mana pools for all players
+  const resetManaPools = (playerIndices: number[]) => {
+    const updatedPlayers = [...players];
+    
+    playerIndices.forEach(index => {
+      if (index >= 0 && index < updatedPlayers.length) {
+        updatedPlayers[index] = {
+          ...updatedPlayers[index],
+          manaPool: { ...defaultManaPool }
+        };
+      }
+    });
+    
+    setPlayers(updatedPlayers);
+  };
+  
   // Move to the next player's turn
   const nextTurn = () => {
-    // Reset mana pool for current player
-    const updatedPlayers = [...players];
-    updatedPlayers[activePlayerIndex] = {
-      ...updatedPlayers[activePlayerIndex],
-      manaPool: { ...defaultManaPool }
-    };
-    setPlayers(updatedPlayers);
+    // In single player mode, toggle between real player and phantom phase
+    if (isSinglePlayerMode) {
+      if (activePlayerIndex === actualPlayerIndex) {
+        // End real player's turn, start phantom phase
+        resetManaPools([actualPlayerIndex]);
+        setIsPhantomPhase(true);
+      } else {
+        // End phantom phase, start real player's turn
+        // Reset mana pools for all phantom players
+        const phantomIndices = players.map((_, i) => i).filter(i => i !== actualPlayerIndex);
+        resetManaPools(phantomIndices);
+        setActivePlayerIndex(actualPlayerIndex);
+        setDisplayedPlayerIndex(actualPlayerIndex);
+        setIsPhantomPhase(false);
+      }
+    } else {
+      // Regular multi-player mode - cycle through players normally
+      const nextActivePlayerIndex = (activePlayerIndex + 1) % players.length;
+      resetManaPools([activePlayerIndex]);
+      setActivePlayerIndex(nextActivePlayerIndex);
+      setDisplayedPlayerIndex(nextActivePlayerIndex);
+    }
+  };
+  
+  // Special function to advance from phantom phase back to real player in single player mode
+  const advancePhantomTurn = () => {
+    if (!isPhantomTurn) return; // Only works during phantom turns
     
-    // Move to next player
-    const nextActivePlayerIndex = (activePlayerIndex + 1) % players.length;
-    setActivePlayerIndex(nextActivePlayerIndex);
-    // Also display the new active player
-    setDisplayedPlayerIndex(nextActivePlayerIndex);
+    // Reset mana pools for all phantom players
+    const phantomIndices = players.map((_, i) => i).filter(i => i !== actualPlayerIndex);
+    resetManaPools(phantomIndices);
+    
+    // Switch back to real player's turn
+    setActivePlayerIndex(actualPlayerIndex);
+    setDisplayedPlayerIndex(actualPlayerIndex);
+    setIsPhantomPhase(false);
   };
 
   const value = {
@@ -181,6 +268,12 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     displayedPlayerIndex,
     timerRunning,
     hasSavedGame,
+    isSinglePlayerMode,
+    isPhantomTurn,
+    actualPlayerIndex,
+    visiblePlayers,
+    phantomPlayers,
+    isPhantomPhase,
     
     // Actions
     startGame,
@@ -189,6 +282,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     removePlayer,
     updatePlayer,
     nextTurn,
+    advancePhantomTurn,
     setTimerRunning,
     setDisplayedPlayerIndex,
     endGame,

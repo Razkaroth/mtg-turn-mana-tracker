@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RotateCcw } from "lucide-react";
+import { useGame } from '../../context/GameContext';
 
 interface ChessTimerProps {
   players: PlayerData[];
@@ -24,6 +25,7 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
   const [times, setTimes] = useState<number[]>(players.map(() => defaultTime));
   const timerRef = useRef<number | null>(null);
   const [timerView, setTimerView] = useState<'active' | 'all'>('active');
+  const { isSinglePlayerMode, isPhantomPhase } = useGame();
 
   // Update times array when players change
   useEffect(() => {
@@ -39,7 +41,10 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
 
   // Handle timer logic
   useEffect(() => {
-    if (running) {
+    // Don't run the timer during phantom phase in single player mode
+    const shouldRun = running && !(isSinglePlayerMode && isPhantomPhase);
+    
+    if (shouldRun) {
       timerRef.current = window.setInterval(() => {
         setTimes(prevTimes => {
           const newTimes = [...prevTimes];
@@ -63,7 +68,7 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
         clearInterval(timerRef.current);
       }
     };
-  }, [running, activePlayerIndex, onTurnEnd]);
+  }, [running, activePlayerIndex, onTurnEnd, isSinglePlayerMode, isPhantomPhase]);
 
   const formatTime = (ms: number): string => {
     const minutes = Math.floor(ms / 60000);
@@ -95,9 +100,17 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
         {timerView === 'active' ? (
           <div className="flex justify-center mb-3">
             <div 
-              className="p-2 min-w-[150px] rounded-md text-center bg-primary text-primary-foreground font-bold shadow"
+              className={`p-2 min-w-[150px] rounded-md text-center ${
+                isSinglePlayerMode && isPhantomPhase
+                  ? 'bg-muted text-muted-foreground'
+                  : 'bg-primary text-primary-foreground font-bold shadow'
+              }`}
             >
-              <span className="block text-xs font-medium">{players[activePlayerIndex]?.name || "Player 1"}</span>
+              <span className="block text-xs font-medium">
+                {isSinglePlayerMode && isPhantomPhase 
+                  ? "Opponents' Phase" 
+                  : players[activePlayerIndex]?.name || "Player 1"}
+              </span>
               <span className="text-xl font-mono">{formatTime(times[activePlayerIndex] || 0)}</span>
             </div>
           </div>
@@ -108,7 +121,9 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
                 key={player.id} 
                 className={`p-2 min-w-[100px] rounded-md text-center transition-all duration-300 ${
                   index === activePlayerIndex 
-                    ? 'bg-primary text-primary-foreground font-bold shadow' 
+                    ? (isSinglePlayerMode && isPhantomPhase) 
+                      ? 'bg-muted text-muted-foreground border border-primary/30'
+                      : 'bg-primary text-primary-foreground font-bold shadow'
                     : 'bg-muted text-muted-foreground'
                 }`}
               >

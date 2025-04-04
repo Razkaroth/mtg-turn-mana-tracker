@@ -24,6 +24,7 @@ export interface PlayerData {
   lands: Land[];
   manaPool: ManaPool;
   profileId?: string; // Link to profile id
+  isPhantom?: boolean; // Whether this player is a "phantom" player in single player mode
 }
 
 // Profile represents a saved player profile
