@@ -213,7 +213,7 @@ const Player: React.FC<PlayerProps> = ({
           </Button>
         </div>
 
-        {/* Life counter */}
+        {/* Life counter - ENHANCED */}
         <motion.div
           initial={{ scale: 1 }}
           whileHover={{ scale: 1.02 }}
@@ -223,13 +223,13 @@ const Player: React.FC<PlayerProps> = ({
             <Button
               variant="outline"
               size="icon"
-              className="text-destructive border border-destructive/20 bg-destructive/5 hover:bg-destructive/10 rounded-full h-9 w-9 transition-colors"
+              className="text-destructive border-2 border-destructive/30 bg-destructive/10 hover:bg-destructive/20 hover:border-destructive/50 rounded-full h-12 w-12 transition-colors shadow-sm"
               onClick={() => updateLife(-1)}
             >
-              <Minus className="h-4 w-4" />
+              <Minus className="h-5 w-5" />
             </Button>
             
-            <div className="flex-shrink-0 bg-gradient-to-br from-card to-background px-5 py-2 rounded-full border border-border/60 min-w-[90px] text-center">
+            <div className="flex-shrink-0 bg-gradient-to-br from-card to-background px-6 py-2.5 rounded-full border-2 border-border/60 min-w-[100px] text-center shadow-sm">
               <motion.span 
                 key={player.life}
                 initial={{ opacity: 0, y: -5 }}
@@ -244,10 +244,10 @@ const Player: React.FC<PlayerProps> = ({
             <Button
               variant="outline"
               size="icon"
-              className="text-primary border border-primary/20 bg-primary/5 hover:bg-primary/10 rounded-full h-9 w-9 transition-colors"
+              className="text-primary border-2 border-primary/30 bg-primary/10 hover:bg-primary/20 hover:border-primary/50 rounded-full h-12 w-12 transition-colors shadow-sm"
               onClick={() => updateLife(1)}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-5 w-5" />
             </Button>
           </div>
         </motion.div>
@@ -259,16 +259,16 @@ const Player: React.FC<PlayerProps> = ({
           onValueChange={setActiveTab}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-2 mb-2 bg-muted/50">
+          <TabsList className="grid w-full grid-cols-2 mb-2 bg-muted/50 h-12">
             <TabsTrigger 
               value="mana" 
-              className={`${totalMana > 0 ? "after:content-[''] after:absolute after:right-2 after:top-1.5 after:h-2 after:w-2 after:rounded-full after:bg-primary after:animate-pulse" : ""} ${activeTab === "mana" ? "data-[state=active]:bg-card" : ""}`}
+              className={`text-base py-3 ${totalMana > 0 ? "after:content-[''] after:absolute after:right-2 after:top-1.5 after:h-3 after:w-3 after:rounded-full after:bg-primary after:animate-pulse" : ""} ${activeTab === "mana" ? "data-[state=active]:bg-card" : ""}`}
             >
               Mana Pool
             </TabsTrigger>
             <TabsTrigger 
               value="lands" 
-              className={activeTab === "lands" ? "data-[state=active]:bg-card" : ""}
+              className={`text-base py-3 ${activeTab === "lands" ? "data-[state=active]:bg-card" : ""}`}
             >
               Lands
             </TabsTrigger>
@@ -276,10 +276,10 @@ const Player: React.FC<PlayerProps> = ({
           
           <TabsContent value="mana" className="mt-0 rounded-md bg-card/30 pt-3 px-3 pb-2">
             {totalMana === 0 ? (
-              <div className="text-center py-4 text-sm text-muted-foreground">
-                <Droplet className="h-5 w-5 mx-auto mb-1 opacity-40" />
-                <p>Your mana pool is empty</p>
-                <p className="text-xs mt-1">Tap lands to add mana</p>
+              <div className="text-center py-6 text-sm text-muted-foreground">
+                <Droplet className="h-6 w-6 mx-auto mb-2 opacity-40" />
+                <p className="text-base">Your mana pool is empty</p>
+                <p className="text-sm mt-1.5">Tap lands to add mana</p>
               </div>
             ) : (
               <div className="bg-card/60 p-3 rounded-md border border-border/30 mb-1.5">
@@ -287,17 +287,17 @@ const Player: React.FC<PlayerProps> = ({
                   {MANA_TYPES.map(mana => (
                     <div 
                       key={mana.symbol} 
-                      className={`flex flex-col items-center border border-border/40 rounded-md p-2 min-w-[70px] ${mana.bgClassName}`}
+                      className={`flex flex-col items-center border-2 border-border/40 rounded-md p-2.5 min-w-[80px] ${mana.bgClassName}`}
                     >
-                      <span className="text-lg">{mana.display}</span>
-                      <span className={`font-bold text-xl my-1 ${mana.iconColor}`}>
+                      <span className="text-xl">{mana.display}</span>
+                      <span className={`font-bold text-2xl my-1.5 ${mana.iconColor}`}>
                         {player.manaPool[mana.symbol as keyof typeof player.manaPool]}
                       </span>
-                      <div className="flex gap-1 mt-1">
+                      <div className="flex gap-2 mt-1 w-full">
                         <Button 
                           variant="ghost"
                           size="icon"
-                          className={`h-7 w-7 bg-destructive/10 hover:bg-destructive/20 text-destructive ${
+                          className={`h-10 w-10 bg-destructive/20 hover:bg-destructive/30 text-destructive border border-destructive/20 hover:border-destructive/40 ${
                             player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0 
                               ? 'opacity-50 cursor-not-allowed' 
                               : ''
@@ -306,16 +306,16 @@ const Player: React.FC<PlayerProps> = ({
                           disabled={player.manaPool[mana.symbol as keyof typeof player.manaPool] === 0}
                           title="Use mana"
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 bg-primary/10 hover:bg-primary/20 text-primary"
+                          className="h-10 w-10 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20 hover:border-primary/40"
                           onClick={() => incrementMana(mana.symbol)}
                           title="Add mana"
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -330,26 +330,26 @@ const Player: React.FC<PlayerProps> = ({
           </TabsContent>
           
           <TabsContent value="lands" className="mt-0 rounded-md bg-card/30 pt-3 px-3 pb-2">
-            {/* Land type buttons */}
-            <div className="flex flex-wrap justify-center gap-1 mb-3">
+            {/* Land type buttons - ENHANCED */}
+            <div className="flex flex-wrap justify-center gap-2 mb-4">
               {LAND_TYPES.map(land => (
                 <Button 
                   key={land.type} 
                   variant="ghost"
                   size="icon"
-                  className={`h-8 w-8 ${land.bgClassName} hover:bg-background hover:scale-110 transition-all duration-200 focus:ring-1 focus:ring-border`}
+                  className={`h-11 w-11 ${land.bgClassName} border-2 border-border/40 hover:border-primary/40 hover:bg-background hover:scale-105 transition-all duration-200 shadow-sm`}
                   onClick={() => addLand(land)}
                   title={land.type}
                 >
-                  <span className={land.iconColor}>{land.symbol}</span>
+                  <span className={`text-lg ${land.iconColor}`}>{land.symbol}</span>
                 </Button>
               ))}
             </div>
             
             {/* Lands display */}
-            <div className="flex flex-wrap gap-1 justify-center">
+            <div className="flex flex-wrap gap-2 justify-center">
               {player.lands.length === 0 ? (
-                <div className="text-xs text-muted-foreground py-3">
+                <div className="text-sm text-muted-foreground py-4">
                   No lands yet. Add some above.
                 </div>
               ) : (
@@ -361,24 +361,24 @@ const Player: React.FC<PlayerProps> = ({
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       whileHover={{ scale: land.tapped ? 1.05 : 1.1 }}
-                      className={`w-8 h-11 border border-input/40 rounded-md flex items-center justify-center relative cursor-pointer group ${landType?.bgClassName} ${
+                      className={`w-11 h-14 border-2 border-input/40 rounded-md flex items-center justify-center relative cursor-pointer group ${landType?.bgClassName} ${
                         land.tapped 
-                          ? 'transform rotate-90 opacity-60 hover:opacity-80' 
-                          : 'hover:border-input hover:shadow-sm'
+                          ? 'transform rotate-90 opacity-70 hover:opacity-90' 
+                          : 'hover:border-input hover:shadow-md'
                       } transition-all duration-300`}
                       onClick={() => toggleLand(land.id)}
                     >
-                      <span className={landType?.iconColor || ''}>{landType?.symbol}</span>
+                      <span className={`text-lg ${landType?.iconColor || ''}`}>{landType?.symbol}</span>
                       <Button 
-                        variant="ghost"
+                        variant="destructive"
                         size="icon"
-                        className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full opacity-0 group-hover:opacity-100 bg-background border border-border p-0 hover:bg-destructive hover:text-destructive-foreground transition-all duration-200"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 p-0 border border-destructive/30 hover:border-destructive shadow-sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           removeLand(land.id);
                         }}
                       >
-                        <X className="h-2 w-2" />
+                        <X className="h-3 w-3" />
                       </Button>
                     </motion.div>
                   );
@@ -386,14 +386,14 @@ const Player: React.FC<PlayerProps> = ({
               )}
             </div>
             
-            {/* Remove Lands section */}
+            {/* Remove Lands section - ENHANCED */}
             {player.lands.length > 0 && (
-              <div className="mt-4 pt-3 border-t border-border/30">
-                <h3 className="text-sm font-medium text-center mb-2 flex items-center justify-center gap-1">
-                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="mt-5 pt-4 border-t border-border/30">
+                <h3 className="text-base font-medium text-center mb-3 flex items-center justify-center gap-1.5">
+                  <Trash2 className="h-4 w-4 text-muted-foreground" />
                   Remove Lands
                 </h3>
-                <div className="flex flex-wrap justify-center gap-1">
+                <div className="flex flex-wrap justify-center gap-2">
                   {LAND_TYPES.map(land => {
                     const count = landCounts[land.type] || 0;
                     // Only show buttons for land types the player has
@@ -403,19 +403,19 @@ const Player: React.FC<PlayerProps> = ({
                       <Button
                         key={`remove-${land.type}`}
                         variant="outline"
-                        size="sm"
-                        className={`${land.bgClassName} border-border/40 hover:bg-background/80 hover:border-destructive/40`}
+                        size="default"
+                        className={`h-11 py-2 px-3 ${land.bgClassName} border-2 border-border/40 hover:bg-destructive/10 hover:border-destructive/40 shadow-sm`}
                         onClick={() => removeLandByType(land.type)}
                       >
-                        <span className={`mr-1.5 ${land.iconColor}`}>{land.symbol}</span>
-                        <span className="text-xs">
+                        <span className={`mr-2 text-lg ${land.iconColor}`}>{land.symbol}</span>
+                        <span className="text-sm font-medium">
                           {count}
                         </span>
                       </Button>
                     );
                   })}
                 </div>
-                <p className="text-xs text-muted-foreground text-center mt-2">
+                <p className="text-sm text-muted-foreground text-center mt-3 mb-1">
                   Click to remove one land of that type
                 </p>
               </div>
