@@ -2,11 +2,15 @@
 export interface GameSettings {
   startingLife: number;
   chessClockMinutes: number;
+  chessClockMode: 'standard' | 'fischer' | 'bronstein';
+  timeIncrement: number; // Time increment in seconds for Fischer and Bronstein modes
 }
 
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
   startingLife: 40,
-  chessClockMinutes: 25
+  chessClockMinutes: 25,
+  chessClockMode: 'standard',
+  timeIncrement: 10
 };
 
 // Player profiles

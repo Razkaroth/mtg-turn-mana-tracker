@@ -168,6 +168,101 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ open, onOpenChange }) => 
               ))}
             </div>
           </div>
+          
+          {/* Chess Clock Mode */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-green-500" />
+                <h3 className="text-base font-medium">Chess Clock Mode</h3>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: 'standard', label: 'Standard' },
+                { id: 'fischer', label: 'Fischer' },
+                { id: 'bronstein', label: 'Bronstein' }
+              ].map(mode => (
+                <Button
+                  key={mode.id}
+                  variant={settings.chessClockMode === mode.id ? "default" : "outline"}
+                  size="sm"
+                  className={`flex-1 ${settings.chessClockMode === mode.id ? "bg-primary text-primary-foreground" : ""}`}
+                  onClick={() => updateSetting('chessClockMode', mode.id as 'standard' | 'fischer' | 'bronstein')}
+                >
+                  {mode.label}
+                </Button>
+              ))}
+            </div>
+            
+            <div className="text-sm text-muted-foreground mt-1">
+              {settings.chessClockMode === 'standard' && 
+                "Standard timing. Each player has a fixed amount of time for the entire game."}
+              {settings.chessClockMode === 'fischer' && 
+                "Fischer timing. After each move, a player receives an additional time increment."}
+              {settings.chessClockMode === 'bronstein' && 
+                "Bronstein timing. A player gets back the time they used for their move, up to a maximum increment."}
+            </div>
+            
+            {/* Time Increment (for Fischer and Bronstein modes) */}
+            {settings.chessClockMode !== 'standard' && (
+              <div className="pt-2 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium">Time Increment</h4>
+                  <div className="font-mono text-base font-medium">
+                    {settings.timeIncrement} sec
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    className="h-7 w-7 rounded-full"
+                    onClick={() => updateSetting('timeIncrement', Math.max(1, settings.timeIncrement - 1))}
+                    disabled={settings.timeIncrement <= 1}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  
+                  <Slider
+                    value={[settings.timeIncrement]}
+                    min={1}
+                    max={60}
+                    step={1}
+                    onValueChange={(value: number[]) => updateSetting('timeIncrement', value[0])}
+                    className="flex-1"
+                  />
+                  
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    className="h-7 w-7 rounded-full"
+                    onClick={() => updateSetting('timeIncrement', Math.min(60, settings.timeIncrement + 1))}
+                    disabled={settings.timeIncrement >= 60}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+                
+                {/* Quick set increment buttons */}
+                <div className="flex flex-wrap gap-2">
+                  {[5, 10, 15, 30].map(value => (
+                    <Button
+                      key={value}
+                      variant={settings.timeIncrement === value ? "default" : "outline"}
+                      size="sm"
+                      className={`text-xs ${settings.timeIncrement === value ? "bg-primary text-primary-foreground" : ""}`}
+                      onClick={() => updateSetting('timeIncrement', value)}
+                    >
+                      {value} sec
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         
         <SheetFooter className="mt-6">
