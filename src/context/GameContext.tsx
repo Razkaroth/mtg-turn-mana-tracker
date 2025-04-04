@@ -35,8 +35,8 @@ interface GameContextType {
 }
 
 // Store keys for localStorage
-const GAME_STATE_KEY = 'mtg-game-state';
-const GAME_SETTINGS_KEY = 'mtg-game-settings';
+const GAME_STATE_KEY = 'auto-magic-ator-game-state';
+const GAME_SETTINGS_KEY = 'auto-magic-ator-game-settings';
 
 const defaultManaPool: ManaPool = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
 

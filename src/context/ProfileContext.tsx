@@ -22,7 +22,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
   // Load profiles from localStorage on first render
   useEffect(() => {
     // Load profiles
-    const savedProfiles = localStorage.getItem('mtg-profiles');
+    const savedProfiles = localStorage.getItem('auto-magic-ator-profiles');
     if (savedProfiles) {
       try {
         const parsedProfiles = JSON.parse(savedProfiles) as Profile[];
@@ -33,7 +33,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
     
     // Load last used profile ID
-    const lastProfile = localStorage.getItem('mtg-last-profile-id');
+    const lastProfile = localStorage.getItem('auto-magic-ator-last-profile-id');
     if (lastProfile) {
       setLastUsedProfileId(lastProfile);
     }
@@ -42,14 +42,14 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
   // Save profiles to localStorage whenever they change
   useEffect(() => {
     if (profiles.length > 0) {
-      localStorage.setItem('mtg-profiles', JSON.stringify(profiles));
+      localStorage.setItem('auto-magic-ator-profiles', JSON.stringify(profiles));
     }
   }, [profiles]);
   
   // Save last used profile ID to localStorage whenever it changes
   useEffect(() => {
     if (lastUsedProfileId) {
-      localStorage.setItem('mtg-last-profile-id', lastUsedProfileId);
+      localStorage.setItem('auto-magic-ator-last-profile-id', lastUsedProfileId);
     }
   }, [lastUsedProfileId]);
   
@@ -92,7 +92,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
     // If this was the last used profile, clear that reference
     if (lastUsedProfileId === profileId) {
       setLastUsedProfileId(null);
-      localStorage.removeItem('mtg-last-profile-id');
+      localStorage.removeItem('auto-magic-ator-last-profile-id');
     }
   };
   

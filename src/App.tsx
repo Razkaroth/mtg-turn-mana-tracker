@@ -16,7 +16,7 @@ const GameContainer: React.FC = () => {
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="mtg-companion-theme">
+    <ThemeProvider defaultTheme="system" storageKey="auto-magic-ator-theme">
       <ProfileProvider>
         <GameProvider>
           <GameContainer />

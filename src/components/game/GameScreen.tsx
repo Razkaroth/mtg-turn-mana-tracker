@@ -13,7 +13,7 @@ export const GameScreen: React.FC = () => {
       {/* Header with End Game button and theme toggle */}
       <div className="flex justify-between items-center p-3 bg-card border-b border-border">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-semibold text-primary">MTG Companion</h1>
+          <h1 className="text-xl font-semibold text-primary">Auto-Magic-Ator 5000</h1>
         </div>
         
         <div className="flex items-center gap-2">

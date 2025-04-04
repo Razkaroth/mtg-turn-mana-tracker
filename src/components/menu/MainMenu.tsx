@@ -239,7 +239,7 @@ export const MainMenu: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground p-4 flex flex-col">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-primary">MTG Companion</h1>
+        <h1 className="text-3xl font-bold text-primary">Auto-Magic-Ator 5000</h1>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -480,8 +480,9 @@ export const MainMenu: React.FC = () => {
         
         {/* Footer information */}
         <div className="text-center text-sm text-muted-foreground">
-          <p>MTG Companion by Raz</p>
+          <p>Auto-Magic-Ator 5000 by Raz</p>
           <p className="text-xs">A Magic: The Gathering turn and mana tracker</p>
+          <p className="text-xs">Because I'm too lazy to keep tapping and untapping my lands</p>
         </div>
       </div>
       
