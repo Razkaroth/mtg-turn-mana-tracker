@@ -27,7 +27,7 @@ export const GameplayUI: React.FC = () => {
     isPhantomPhase,
     actualPlayerIndex
   } = useGame();
-
+  
   const activePlayer = players[activePlayerIndex];
   const displayedPlayer = players[displayedPlayerIndex];
   const realPlayer = isSinglePlayerMode ? players[actualPlayerIndex] : players[displayedPlayerIndex];

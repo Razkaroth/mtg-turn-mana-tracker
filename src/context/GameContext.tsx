@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { PlayerData, ManaPool } from '../types';
+import { PlayerData, ManaPool, GameSettings, DEFAULT_GAME_SETTINGS, Land } from '../types';
 
 interface GameContextType {
   // Game state
@@ -28,10 +28,15 @@ interface GameContextType {
   setDisplayedPlayerIndex: (index: number) => void;
   endGame: () => void;
   continueSavedGame: () => void;
+  
+  // Settings
+  settings: GameSettings;
+  updateSettings: (newSettings: Partial<GameSettings>) => void;
 }
 
 // Store keys for localStorage
 const GAME_STATE_KEY = 'mtg-game-state';
+const GAME_SETTINGS_KEY = 'mtg-game-settings';
 
 const defaultManaPool: ManaPool = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
 
@@ -53,6 +58,19 @@ interface SavedGameState {
 
 export const GameContext = createContext<GameContextType | undefined>(undefined);
 
+// Helper function to get settings from localStorage with defaults
+const getStoredSettings = (): GameSettings => {
+  try {
+    const storedSettings = localStorage.getItem(GAME_SETTINGS_KEY);
+    if (storedSettings) {
+      return { ...DEFAULT_GAME_SETTINGS, ...JSON.parse(storedSettings) };
+    }
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+  }
+  return DEFAULT_GAME_SETTINGS;
+};
+
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [gameStarted, setGameStarted] = useState(false);
   const [players, setPlayers] = useState<PlayerData[]>(defaultPlayers);
@@ -63,6 +81,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isSinglePlayerMode, setIsSinglePlayerMode] = useState(false);
   const [actualPlayerIndex, setActualPlayerIndex] = useState(0);
   const [isPhantomPhase, setIsPhantomPhase] = useState(false);
+  const [settings, setSettings] = useState<GameSettings>(getStoredSettings());
   
   // Derived state for phantom turns
   const isPhantomTurn = isSinglePlayerMode && 
@@ -100,6 +119,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [gameStarted, players, activePlayerIndex, displayedPlayerIndex, isSinglePlayerMode, actualPlayerIndex, isPhantomPhase]);
 
+  // Save settings to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem(GAME_SETTINGS_KEY, JSON.stringify(settings));
+  }, [settings]);
+
   // Check if a saved game exists in localStorage
   const checkForSavedGame = () => {
     const savedGameJSON = localStorage.getItem(GAME_STATE_KEY);
@@ -131,7 +155,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newManaPool = { ...defaultManaPool };
     
     // Add mana for each land
-    player.lands.forEach(land => {
+    player.lands.forEach((land: Land) => {
       newManaPool[land.produces as keyof typeof newManaPool]++;
     });
     
@@ -140,7 +164,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ...player,
       manaPool: newManaPool,
       // Set all lands as tapped to represent they've been used
-      lands: player.lands.map(land => ({ ...land, tapped: true }))
+      lands: player.lands.map((land: Land) => ({ ...land, tapped: true }))
     };
     
     // Update player in the players array
@@ -155,7 +179,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     singlePlayerMode: boolean = false, 
     playerPosition: number = 0
   ) => {
-    setPlayers(configuredPlayers);
+    // Update players with current starting life from settings
+    const playersWithCurrentLife = configuredPlayers.map(player => ({
+      ...player,
+      life: settings.startingLife
+    }));
+    
+    setPlayers(playersWithCurrentLife);
     const startingPlayerIndex = singlePlayerMode ? playerPosition : 0;
     
     setActivePlayerIndex(startingPlayerIndex);
@@ -221,7 +251,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setPlayers([...players, { 
       id: newId, 
       name: `Player ${newId}`, 
-      life: 20, 
+      life: settings.startingLife,  // Use the current setting
       lands: [], 
       manaPool: { ...defaultManaPool } 
     }]);
@@ -304,6 +334,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     fillManaPool(actualPlayerIndex);
   };
 
+  // Update settings and save to localStorage
+  const updateSettings = (newSettings: Partial<GameSettings>) => {
+    setSettings(prevSettings => ({
+      ...prevSettings,
+      ...newSettings
+    }));
+  };
+
   const value = {
     // State
     gameStarted,
@@ -330,7 +368,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setTimerRunning,
     setDisplayedPlayerIndex,
     endGame,
-    continueSavedGame
+    continueSavedGame,
+    
+    // Settings
+    settings,
+    updateSettings
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

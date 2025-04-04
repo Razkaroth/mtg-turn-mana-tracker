@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { PlusCircle, User, Trash2, Edit, Play, Info, RotateCcw, Clock, Users, Smartphone, Check } from "lucide-react";
+import { PlusCircle, User, Trash2, Edit, Play, Info, RotateCcw, Clock, Users, Smartphone, Check, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useGame } from '../../context/GameContext';
 import { useProfiles } from '../../context/ProfileContext';
@@ -26,6 +26,7 @@ import ProfileSelector from '../profile/ProfileSelector';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
+import SettingsPanel from '../game/SettingsPanel';
 
 interface SelectedPlayer {
   tempId: number;
@@ -35,7 +36,7 @@ interface SelectedPlayer {
 }
 
 export const MainMenu: React.FC = () => {
-  const { startGame, continueSavedGame, hasSavedGame, resetGame } = useGame();
+  const { startGame, continueSavedGame, hasSavedGame, resetGame, settings } = useGame();
   const { profiles, lastUsedProfileId } = useProfiles();
   
   const [selectedPlayers, setSelectedPlayers] = useState<SelectedPlayer[]>([
@@ -45,6 +46,9 @@ export const MainMenu: React.FC = () => {
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [currentEditingIndex, setCurrentEditingIndex] = useState<number | null>(null);
   const [isConfirmNewGameOpen, setIsConfirmNewGameOpen] = useState(false);
+  
+  // Settings panel state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   // Single player mode state
   const [isSinglePlayerMode, setIsSinglePlayerMode] = useState(false);
@@ -195,7 +199,7 @@ export const MainMenu: React.FC = () => {
     const players: PlayerData[] = selectedPlayers.map((selectedPlayer, index) => ({
       id: index + 1,
       name: selectedPlayer.customName,
-      life: 20,
+      life: settings.startingLife,
       lands: [],
       manaPool: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 },
       profileId: selectedPlayer.profile?.id,
@@ -222,7 +226,19 @@ export const MainMenu: React.FC = () => {
     <div className="min-h-screen bg-background text-foreground p-4 flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-primary">MTG Companion</h1>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm" 
+            className="w-9 px-0"
+            onClick={() => setIsSettingsOpen(true)}
+            title="Game Settings"
+          >
+            <Settings className="h-4 w-4" />
+            <span className="sr-only">Game Settings</span>
+          </Button>
+          <ThemeToggle />
+        </div>
       </div>
       
       <div className="max-w-md mx-auto w-full">
@@ -502,6 +518,12 @@ export const MainMenu: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Settings Panel */}
+      <SettingsPanel 
+        open={isSettingsOpen} 
+        onOpenChange={setIsSettingsOpen} 
+      />
     </div>
   );
 }; 

@@ -20,15 +20,18 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
   running, 
   onTurnEnd 
 }) => {
-  // Default time per player (5 minutes in milliseconds)
-  const defaultTime = 5 * 60 * 1000;
+  // Get time from settings
+  const { settings } = useGame();
+  
+  // Convert minutes from settings to milliseconds
+  const defaultTime = settings.chessClockMinutes * 60 * 1000;
   
   const [times, setTimes] = useState<number[]>(players.map(() => defaultTime));
   const timerRef = useRef<number | null>(null);
   const [timerView, setTimerView] = useState<'active' | 'all'>('active');
   const { isSinglePlayerMode, isPhantomPhase } = useGame();
 
-  // Update times array when players change
+  // Update times array when players change or settings change
   useEffect(() => {
     setTimes(prevTimes => {
       if (prevTimes.length < players.length) {
@@ -38,7 +41,7 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
       }
       return prevTimes;
     });
-  }, [players.length]);
+  }, [players.length, defaultTime]);
 
   // Handle timer logic
   useEffect(() => {
