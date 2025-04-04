@@ -195,20 +195,34 @@ export const MainMenu: React.FC = () => {
 
   // Start a new game (after confirmation if needed)
   const startNewGame = () => {
-    // Mark players as phantom in single player mode
-    const players: PlayerData[] = selectedPlayers.map((selectedPlayer, index) => ({
-      id: index + 1,
-      name: selectedPlayer.customName,
-      life: settings.startingLife,
-      lands: [],
-      manaPool: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 },
-      profileId: selectedPlayer.profile?.id,
-      isPhantom: isSinglePlayerMode && index !== playerPosition
-    }));
+    // Print settings to verify they're correct
+    console.log("Current settings before starting game:", settings);
+    console.log("Starting new game with starting life:", settings.startingLife);
+    
+    // First reset the game state
+    resetGame();
+    
+    // Then explicitly create and set the players with current settings
+    const newPlayers: PlayerData[] = selectedPlayers.map((selectedPlayer, index) => {
+      // Create a new player with explicit settings
+      const newPlayer: PlayerData = {
+        id: index + 1,
+        name: selectedPlayer.customName,
+        life: settings.startingLife, // Explicitly use settings.startingLife
+        lands: [],
+        manaPool: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 },
+        profileId: selectedPlayer.profile?.id,
+        isPhantom: isSinglePlayerMode && index !== playerPosition
+      };
+      
+      console.log(`Created player ${newPlayer.name} with life: ${newPlayer.life}`);
+      return newPlayer;
+    });
     
     setIsConfirmNewGameOpen(false);
-    resetGame(); // Clear any existing game first
-    startGame(players, isSinglePlayerMode, playerPosition);
+    
+    // Start the game with the newly created players
+    startGame(newPlayers, isSinglePlayerMode, playerPosition);
   };
   
   // Check if any profiles are being used by multiple players

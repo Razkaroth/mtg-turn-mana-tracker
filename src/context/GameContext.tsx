@@ -40,11 +40,6 @@ const GAME_SETTINGS_KEY = 'mtg-game-settings';
 
 const defaultManaPool: ManaPool = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
 
-const defaultPlayers: PlayerData[] = [
-  { id: 1, name: 'Player 1', life: 20, lands: [], manaPool: { ...defaultManaPool } },
-  { id: 2, name: 'Player 2', life: 20, lands: [], manaPool: { ...defaultManaPool } },
-];
-
 // Type for the saved game state structure
 interface SavedGameState {
   players: PlayerData[];
@@ -72,8 +67,17 @@ const getStoredSettings = (): GameSettings => {
 };
 
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Load settings first, as we need them for defaultPlayers
+  const [settings, setSettings] = useState<GameSettings>(getStoredSettings());
+  
+  // Create defaultPlayers using settings value instead of hardcoded life
+  const createDefaultPlayers = (): PlayerData[] => [
+    { id: 1, name: 'Player 1', life: settings.startingLife, lands: [], manaPool: { ...defaultManaPool } },
+    { id: 2, name: 'Player 2', life: settings.startingLife, lands: [], manaPool: { ...defaultManaPool } },
+  ];
+
   const [gameStarted, setGameStarted] = useState(false);
-  const [players, setPlayers] = useState<PlayerData[]>(defaultPlayers);
+  const [players, setPlayers] = useState<PlayerData[]>(() => createDefaultPlayers());
   const [activePlayerIndex, setActivePlayerIndex] = useState(0);
   const [displayedPlayerIndex, setDisplayedPlayerIndex] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -81,7 +85,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isSinglePlayerMode, setIsSinglePlayerMode] = useState(false);
   const [actualPlayerIndex, setActualPlayerIndex] = useState(0);
   const [isPhantomPhase, setIsPhantomPhase] = useState(false);
-  const [settings, setSettings] = useState<GameSettings>(getStoredSettings());
   
   // Derived state for phantom turns
   const isPhantomTurn = isSinglePlayerMode && 
@@ -122,7 +125,25 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Save settings to localStorage when they change
   useEffect(() => {
     localStorage.setItem(GAME_SETTINGS_KEY, JSON.stringify(settings));
-  }, [settings]);
+    
+    // If there are existing players and the game hasn't started yet,
+    // update their life totals to match the new settings
+    if (!gameStarted && players.length > 0) {
+      console.log("Settings changed, updating player life totals to:", settings.startingLife);
+      
+      // Only update if the current life values don't match settings
+      const needsUpdate = players.some(player => player.life !== settings.startingLife);
+      
+      if (needsUpdate) {
+        setPlayers(prevPlayers => 
+          prevPlayers.map(player => ({
+            ...player,
+            life: settings.startingLife
+          }))
+        );
+      }
+    }
+  }, [settings]); // Only react to settings changes
 
   // Check if a saved game exists in localStorage
   const checkForSavedGame = () => {
@@ -179,13 +200,15 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     singlePlayerMode: boolean = false, 
     playerPosition: number = 0
   ) => {
-    // Update players with current starting life from settings
-    const playersWithCurrentLife = configuredPlayers.map(player => ({
-      ...player,
-      life: settings.startingLife
-    }));
+    // Clear any saved game state first
+    localStorage.removeItem(GAME_STATE_KEY);
     
-    setPlayers(playersWithCurrentLife);
+    console.log("Starting game with players:", 
+      configuredPlayers.map(p => `${p.name} (life: ${p.life})`));
+    
+    // Use the players as they are configured (including life values)
+    setPlayers(configuredPlayers);
+    
     const startingPlayerIndex = singlePlayerMode ? playerPosition : 0;
     
     setActivePlayerIndex(startingPlayerIndex);
@@ -206,7 +229,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Reset the game to initial state and clear saved game
   const resetGame = () => {
     setGameStarted(false);
-    setPlayers(defaultPlayers);
+    setPlayers(createDefaultPlayers());
     setActivePlayerIndex(0);
     setDisplayedPlayerIndex(0);
     setTimerRunning(false);

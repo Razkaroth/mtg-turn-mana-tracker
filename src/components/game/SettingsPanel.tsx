@@ -27,12 +27,19 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ open, onOpenChange }) => 
     key: K, 
     value: GameSettings[K]
   ) => {
+    console.log(`Updating setting: ${key} from ${settings[key]} to ${value}`);
+    
+    // Create a new settings object to ensure it's properly updated
+    const newSettings = { ...settings, [key]: value };
+    console.log("New settings:", newSettings);
+    
+    // Update the settings
     updateSettings({ [key]: value });
   };
   
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg p-4">
+      <SheetContent className="sm:max-w-lg" style={{ padding: "24px" }}>
         <SheetHeader className="pb-2">
           <SheetTitle className="flex items-center gap-2 text-xl">
             <Settings className="h-5 w-5 text-primary" />
