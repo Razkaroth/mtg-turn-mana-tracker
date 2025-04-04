@@ -8,6 +8,7 @@ import PlayerSelector from '../player/PlayerSelector';
 import PhantomTurnBanner from './PhantomTurnBanner';
 import { PlayerData } from '../../types';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const GameplayUI: React.FC = () => {
   const { 
@@ -67,54 +68,81 @@ export const GameplayUI: React.FC = () => {
   return (
     <div className="bg-background text-foreground h-full flex flex-col">
       {/* Controls and header area - fixed at top */}
-      <div className="flex-none p-4 pb-2 border-b border-border">
+      <motion.div 
+        initial={{ y: -10, opacity: 0.8 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="flex-none p-4 pb-2 border-b border-border/40 bg-background/80 backdrop-blur-sm z-10"
+      >
         {/* Game controls */}
         <div className="flex justify-center gap-2 max-w-sm mx-auto">
           <Button 
             onClick={addPlayer}
-            variant="secondary"
+            variant="ghost"
             size="sm"
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 px-3 border border-border/40 hover:bg-background hover:border-border"
             disabled={isSinglePlayerMode} // Disable adding players in single player mode
           >
-            <PlusCircle className="h-4 w-4" />
-            Add
-          </Button>
-          <Button 
-            onClick={() => setTimerRunning(!timerRunning)}
-            variant={timerRunning ? "destructive" : "default"}
-            size="sm"
-            className="flex items-center gap-1"
-          >
-            {timerRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            {timerRunning ? 'Pause' : 'Start'}
+            <PlusCircle className="h-4 w-4 text-primary/70" />
+            <span className="text-sm">Add</span>
           </Button>
           
-          {isPhantomPhase ? (
-            // Show "Begin Your Turn" button during phantom phase
-            <Button 
-              onClick={handleAdvancePhantomTurn}
-              variant="default"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <SkipForward className="h-4 w-4" />
-              Begin Your Turn
-            </Button>
-          ) : (
-            // Show regular "Next Turn" button during real player turns
-            <Button 
-              onClick={handleNextTurn}
-              variant="default"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <ArrowRight className="h-4 w-4" />
-              Next Turn
-            </Button>
-          )}
+          <Button 
+            onClick={() => setTimerRunning(!timerRunning)}
+            variant={timerRunning ? "secondary" : "outline"}
+            size="sm"
+            className={`flex items-center gap-1 px-3 border ${
+              timerRunning 
+              ? 'border-primary/40 text-primary hover:bg-primary/10' 
+              : 'border-border/40 hover:bg-background hover:border-border'
+            }`}
+          >
+            {timerRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            <span className="text-sm">{timerRunning ? 'Pause' : 'Start'}</span>
+          </Button>
+          
+          <AnimatePresence mode="wait">
+            {isPhantomPhase ? (
+              // Show "Begin Your Turn" button during phantom phase
+              <motion.div
+                key="phantom-button"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
+                transition={{ duration: 0.2 }}
+              >
+                <Button 
+                  onClick={handleAdvancePhantomTurn}
+                  variant="default"
+                  size="sm"
+                  className="flex items-center gap-1 px-3 bg-primary/90 hover:bg-primary"
+                >
+                  <SkipForward className="h-4 w-4" />
+                  <span className="text-sm">Begin Your Turn</span>
+                </Button>
+              </motion.div>
+            ) : (
+              // Show regular "Next Turn" button during real player turns
+              <motion.div
+                key="next-turn-button"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
+                transition={{ duration: 0.2 }}
+              >
+                <Button 
+                  onClick={handleNextTurn}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1 px-3 border-border/40 hover:bg-background hover:border-border"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  <span className="text-sm">Next Turn</span>
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
       
       {/* Main scrollable content area */}
       <div className="flex-grow overflow-y-auto p-4 pt-2 pb-20">
@@ -127,23 +155,23 @@ export const GameplayUI: React.FC = () => {
           />
           
           {/* Display whose turn it is */}
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-3 text-sm bg-card/50 rounded-lg border border-border/30 py-1.5 px-3">
             <div className="flex items-center">
-              <span className="text-sm text-muted-foreground mr-2">Active:</span>
+              <span className="text-muted-foreground mr-2">Active:</span>
               {isPhantomPhase ? (
-                <span className="text-sm font-bold text-muted-foreground italic">
+                <span className="font-medium text-muted-foreground italic">
                   Opponents' Phase
                 </span>
               ) : (
-                <span className={`text-sm font-bold ${activePlayer.isPhantom ? 'text-muted-foreground italic' : ''}`}>
+                <span className={`font-medium ${activePlayer.isPhantom ? 'text-muted-foreground italic' : 'text-foreground'}`}>
                   {activePlayer.name}
                   {activePlayer.isPhantom && " (AI)"}
                 </span>
               )}
             </div>
             <div className="flex items-center">
-              <span className="text-sm text-muted-foreground mr-2">Viewing:</span>
-              <span className="text-sm font-bold">
+              <span className="text-muted-foreground mr-2">Viewing:</span>
+              <span className="font-medium">
                 {displayedPlayer.name}
               </span>
             </div>
@@ -151,53 +179,70 @@ export const GameplayUI: React.FC = () => {
           
           {/* Turn status indicator for single player mode */}
           {isSinglePlayerMode && (
-            <div className={`text-sm text-center mb-3 p-3 rounded-md ${
-              isPhantomPhase 
-                ? 'bg-muted border border-muted-foreground/20' 
-                : 'bg-primary/10 text-primary font-medium'
-            }`}>
-              {isPhantomPhase ? (
-                <div className="space-y-1">
-                  <p className="font-medium">Opponents' Phase</p>
-                  <p className="text-xs text-muted-foreground">
-                    Click "Begin Your Turn" when you're ready to take your turn
-                  </p>
-                </div>
-              ) : (
-                <div>It's your turn!</div>
-              )}
-            </div>
+            <AnimatePresence mode="wait">
+              <motion.div 
+                key={isPhantomPhase ? "phantom" : "player"}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.2 }}
+                className={`text-sm text-center mb-4 p-3 rounded-md border ${
+                  isPhantomPhase 
+                    ? 'bg-muted/30 border-muted-foreground/20' 
+                    : 'bg-primary/10 border-primary/20 text-primary font-medium'
+                }`}
+              >
+                {isPhantomPhase ? (
+                  <div className="space-y-1">
+                    <p className="font-medium text-foreground/80">Opponents' Phase</p>
+                    <p className="text-xs text-muted-foreground">
+                      Click "Begin Your Turn" when you're ready to take your turn
+                    </p>
+                  </div>
+                ) : (
+                  <div>It's your turn!</div>
+                )}
+              </motion.div>
+            </AnimatePresence>
           )}
           
           {/* Phantom phase banner */}
-          {isPhantomPhase && (
-            <PhantomTurnBanner onNextTurn={handleAdvancePhantomTurn} />
-          )}
+          {isPhantomPhase && <PhantomTurnBanner onNextTurn={handleAdvancePhantomTurn} />}
           
           {/* Player component - always visible in single player mode */}
-          {isSinglePlayerMode ? (
-            <Player
-              key={realPlayer.id}
-              player={realPlayer}
-              isActive={!isPhantomPhase}
-              onUpdate={(updatedData: Partial<PlayerData>) => updatePlayer(realPlayer.id, updatedData)}
-              onRemove={() => removePlayer(realPlayer.id)}
-            />
-          ) : (
-            <Player
-              key={displayedPlayer.id}
-              player={displayedPlayer}
-              isActive={displayedPlayerIndex === activePlayerIndex}
-              onUpdate={(updatedData: Partial<PlayerData>) => updatePlayer(displayedPlayer.id, updatedData)}
-              onRemove={() => removePlayer(displayedPlayer.id)}
-            />
-          )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={isSinglePlayerMode ? realPlayer.id : displayedPlayer.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              {isSinglePlayerMode ? (
+                <Player
+                  key={realPlayer.id}
+                  player={realPlayer}
+                  isActive={!isPhantomPhase}
+                  onUpdate={(updatedData: Partial<PlayerData>) => updatePlayer(realPlayer.id, updatedData)}
+                  onRemove={() => removePlayer(realPlayer.id)}
+                />
+              ) : (
+                <Player
+                  key={displayedPlayer.id}
+                  player={displayedPlayer}
+                  isActive={displayedPlayerIndex === activePlayerIndex}
+                  onUpdate={(updatedData: Partial<PlayerData>) => updatePlayer(displayedPlayer.id, updatedData)}
+                  onRemove={() => removePlayer(displayedPlayer.id)}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
       
       {/* Fixed footer area for player selector */}
       {!isSinglePlayerMode && (
-        <div className="flex-none">
+        <div className="flex-none fixed bottom-0 left-0 right-0 border-t border-border/30 bg-background/80 backdrop-blur-sm z-10">
           <PlayerSelector
             players={visiblePlayers}
             displayedPlayerIndex={displayedPlayerIndex}

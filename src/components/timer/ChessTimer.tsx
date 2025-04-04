@@ -3,8 +3,9 @@ import { PlayerData } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Clock, Users } from "lucide-react";
 import { useGame } from '../../context/GameContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ChessTimerProps {
   players: PlayerData[];
@@ -80,68 +81,122 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
     setTimes(players.map(() => defaultTime));
   };
 
+  // Helper to get time color based on remaining time
+  const getTimeColor = (ms: number): string => {
+    if (ms <= 60000) return 'text-red-500'; // Last minute
+    if (ms <= 2 * 60000) return 'text-amber-500'; // Last 2 minutes
+    return '';
+  };
+
   return (
-    <Card className="mb-4 border-border bg-card backdrop-blur-sm">
+    <Card className="mb-4 border-border/50 bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden">
       <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between">
-        <CardTitle className="text-base font-bold text-primary">Turn Timer</CardTitle>
+        <CardTitle className="text-base font-medium flex items-center gap-1.5">
+          <Clock className="h-4 w-4 text-primary/70" />
+          <span className="text-foreground/90">Turn Timer</span>
+        </CardTitle>
         <Tabs 
           defaultValue="active" 
           value={timerView} 
           onValueChange={(value) => setTimerView(value as 'active' | 'all')}
           className="w-auto"
         >
-          <TabsList className="h-7 p-0.5">
-            <TabsTrigger value="active" className="text-xs px-2 py-0.5">Active</TabsTrigger>
-            <TabsTrigger value="all" className="text-xs px-2 py-0.5">All</TabsTrigger>
+          <TabsList className="h-7 p-0.5 bg-muted/50">
+            <TabsTrigger value="active" className="text-xs px-2 py-0.5 data-[state=active]:bg-card">Active</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs px-2 py-0.5 data-[state=active]:bg-card">
+              <span className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                All
+              </span>
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </CardHeader>
       <CardContent className="p-3 pt-2">
         {timerView === 'active' ? (
           <div className="flex justify-center mb-3">
-            <div 
-              className={`p-2 min-w-[150px] rounded-md text-center ${
+            <motion.div 
+              initial={{ scale: 0.95 }}
+              animate={{ 
+                scale: 1,
+                borderColor: running && !(isSinglePlayerMode && isPhantomPhase)
+                  ? 'rgba(var(--primary), 0.3)'
+                  : 'rgba(var(--muted-foreground), 0.2)'
+              }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              className={`relative p-2 px-4 min-w-[180px] rounded-lg border text-center ${
                 isSinglePlayerMode && isPhantomPhase
-                  ? 'bg-muted text-muted-foreground'
-                  : 'bg-primary text-primary-foreground font-bold shadow'
+                  ? 'bg-muted/30 text-muted-foreground border-muted-foreground/20'
+                  : 'bg-gradient-to-b from-card to-background text-foreground border-primary/30'
               }`}
             >
-              <span className="block text-xs font-medium">
+              <span className="block text-xs font-medium mb-1 truncate max-w-full">
                 {isSinglePlayerMode && isPhantomPhase 
                   ? "Opponents' Phase" 
                   : players[activePlayerIndex]?.name || "Player 1"}
               </span>
-              <span className="text-xl font-mono">{formatTime(times[activePlayerIndex] || 0)}</span>
-            </div>
+              <motion.span 
+                key={times[activePlayerIndex]}
+                initial={{ opacity: 0.7, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className={`text-2xl font-mono font-semibold ${getTimeColor(times[activePlayerIndex] || 0)}`}
+              >
+                {formatTime(times[activePlayerIndex] || 0)}
+              </motion.span>
+              {running && !(isSinglePlayerMode && isPhantomPhase) && (
+                <motion.div 
+                  className="absolute bottom-0 left-0 h-[2px] bg-primary/30"
+                  animate={{ width: ['0%', '100%'] }}
+                  transition={{ 
+                    duration: 1, 
+                    ease: "linear", 
+                    repeat: Infinity 
+                  }}
+                />
+              )}
+            </motion.div>
           </div>
         ) : (
           <div className="flex flex-wrap justify-center gap-2 mb-3">
-            {players.map((player, index) => (
-              <div 
-                key={player.id} 
-                className={`p-2 min-w-[100px] rounded-md text-center transition-all duration-300 ${
-                  index === activePlayerIndex 
-                    ? (isSinglePlayerMode && isPhantomPhase) 
-                      ? 'bg-muted text-muted-foreground border border-primary/30'
-                      : 'bg-primary text-primary-foreground font-bold shadow'
-                    : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                <span className="block text-xs font-medium">{player.name}</span>
-                <span className="text-xl font-mono">{formatTime(times[index])}</span>
-              </div>
-            ))}
+            <AnimatePresence>
+              {players.map((player, index) => (
+                <motion.div 
+                  key={player.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ 
+                    opacity: 1, 
+                    scale: 1,
+                    y: 0
+                  }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.2 }}
+                  className={`p-2 min-w-[110px] rounded-md text-center transition-all duration-300 ${
+                    index === activePlayerIndex 
+                      ? (isSinglePlayerMode && isPhantomPhase) 
+                        ? 'bg-muted/30 text-muted-foreground border border-primary/20'
+                        : 'bg-card border border-primary/30 text-foreground shadow-sm'
+                      : 'bg-muted/30 text-muted-foreground border border-transparent'
+                  }`}
+                >
+                  <span className="block text-xs font-medium mb-0.5 truncate max-w-full">{player.name}</span>
+                  <span className={`text-lg font-mono ${getTimeColor(times[index])}`}>
+                    {formatTime(times[index])}
+                  </span>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
         
         <Button 
           onClick={resetTimers}
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="w-full text-sm"
+          className="w-full text-sm border border-border/40 hover:bg-muted/40 transition-colors"
         >
-          <RotateCcw className="h-3.5 w-3.5 mr-1" />
-          Reset
+          <RotateCcw className="h-3.5 w-3.5 mr-1 opacity-70" />
+          Reset Timers
         </Button>
       </CardContent>
     </Card>
