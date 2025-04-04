@@ -25,7 +25,6 @@ import { PlayerData, Profile } from '../../types';
 import ProfileSelector from '../profile/ProfileSelector';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SelectedPlayer {
@@ -71,12 +70,12 @@ export const MainMenu: React.FC = () => {
     }
   }, [lastUsedProfileId, profiles]);
   
-  // When single player mode is toggled, ensure we have at least 3 players for a meaningful game
+  // When single player mode is toggled, ensure we have at least 2 players for a meaningful game
   useEffect(() => {
-    if (isSinglePlayerMode && selectedPlayers.length < 3) {
-      // Add players to reach at least 3 total players
+    if (isSinglePlayerMode && selectedPlayers.length < 2) {
+      // Add players to reach at least 2 total players
       const currentCount = selectedPlayers.length;
-      const additionalNeeded = 3 - currentCount;
+      const additionalNeeded = 2 - currentCount;
       
       if (additionalNeeded > 0) {
         const highestId = Math.max(...selectedPlayers.map(p => p.tempId));
@@ -132,7 +131,7 @@ export const MainMenu: React.FC = () => {
   
   // Remove a player
   const removePlayer = (tempId: number) => {
-    if (selectedPlayers.length <= (isSinglePlayerMode ? 3 : 1)) return; // Prevent having less than 3 players in single player mode
+    if (selectedPlayers.length <= (isSinglePlayerMode ? 2 : 1)) return; // Prevent having less than 2 players in single player mode
     setSelectedPlayers(selectedPlayers.filter(p => p.tempId !== tempId));
   };
   
@@ -408,7 +407,7 @@ export const MainMenu: React.FC = () => {
                       size="icon"
                       className="h-8 w-8 rounded-full hover:bg-muted hover:text-destructive"
                       onClick={() => removePlayer(player.tempId)}
-                      disabled={selectedPlayers.length <= (isSinglePlayerMode ? 3 : 1)}
+                      disabled={selectedPlayers.length <= (isSinglePlayerMode ? 2 : 1)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
