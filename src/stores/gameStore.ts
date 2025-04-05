@@ -221,7 +221,7 @@ export const useGameStore = create<GameState>()((set, get) => {
       localStorage.removeItem(GAME_STATE_KEY)
       
       // Reset players
-      const resetPlayers = get().players.map((player: PlayerData, index: number) => ({
+      const resetPlayers = get().players.map((_, index: number) => ({
         id: index + 1,
         name: `Player ${index + 1}`,
         life: settings.startingLife,
