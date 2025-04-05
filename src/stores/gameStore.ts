@@ -39,8 +39,13 @@ const getStoredSettings = (): GameSettings => {
 
 // Helper to check if a saved game exists
 const checkForSavedGame = (): boolean => {
-  const savedGameJSON = localStorage.getItem(GAME_STATE_KEY)
-  return !!savedGameJSON
+  try {
+    const savedGameJSON = localStorage.getItem(GAME_STATE_KEY)
+    return !!savedGameJSON
+  } catch (error) {
+    console.error('Failed to check for saved game:', error)
+    return false
+  }
 }
 
 // Helper to load saved game state
@@ -106,6 +111,50 @@ export const useGameStore = create<GameState>()((set, get) => {
     { id: 1, name: 'Player 1', life: initialSettings.startingLife, lands: [], manaPool: { ...defaultManaPool } },
     { id: 2, name: 'Player 2', life: initialSettings.startingLife, lands: [], manaPool: { ...defaultManaPool } },
   ]
+
+  // Helper function to handle advancing to the next player (used by both nextTurn and advancePhantomTurn)
+  const advanceToNextPlayer = (nextPlayerIndex: number) => {
+    const { players } = get()
+    
+    // Create copy of players
+    const updatedPlayers = [...players];
+    
+    // MAGIC THE GATHERING RULES: Mana pools only empty at the beginning of a player's turn,
+    // not when they end their turn. So we reset the mana for the player who is about to start their turn.
+    
+    // Reset mana pool for the player who is starting their turn
+    updatedPlayers[nextPlayerIndex] = {
+      ...updatedPlayers[nextPlayerIndex],
+      manaPool: { ...defaultManaPool },
+      lands: updatedPlayers[nextPlayerIndex].lands.map((land: Land) => ({
+        ...land,
+        tapped: false
+      }))
+    };
+    
+    // Check if it's a phantom phase
+    let isPhantomPhase = false;
+    if (get().isSinglePlayerMode) {
+      const actualPlayerIndex = get().actualPlayerIndex;
+      if (nextPlayerIndex !== actualPlayerIndex) {
+        // It's a phantom player's turn
+        isPhantomPhase = true;
+      }
+    }
+    
+    set({
+      players: updatedPlayers,
+      activePlayerIndex: nextPlayerIndex,
+      displayedPlayerIndex: nextPlayerIndex,
+      isPhantomPhase
+    });
+    
+    // Fill mana pool for next player
+    get().fillManaPool(nextPlayerIndex)
+    
+    // Save game state
+    get().saveGameState()
+  }
 
   return {
     // Initial state
@@ -265,44 +314,11 @@ export const useGameStore = create<GameState>()((set, get) => {
       
       if (players.length === 0) return
       
-      // Create copy of players
-      const updatedPlayers = [...players];
-      
-      // Reset mana pool for current player
-      updatedPlayers[activePlayerIndex] = {
-        ...updatedPlayers[activePlayerIndex],
-        manaPool: { ...defaultManaPool },
-        lands: updatedPlayers[activePlayerIndex].lands.map((land: Land) => ({
-          ...land,
-          tapped: false
-        }))
-      };
-      
       // Move to next player
       const nextPlayerIndex = (activePlayerIndex + 1) % players.length
       
-      // Check if it's a phantom phase
-      let isPhantomPhase = false;
-      if (get().isSinglePlayerMode) {
-        const actualPlayerIndex = get().actualPlayerIndex;
-        if (nextPlayerIndex !== actualPlayerIndex) {
-          // It's a phantom player's turn
-          isPhantomPhase = true;
-        }
-      }
-      
-      set({
-        players: updatedPlayers,
-        activePlayerIndex: nextPlayerIndex,
-        displayedPlayerIndex: nextPlayerIndex,
-        isPhantomPhase
-      });
-      
-      // Fill mana pool for next player
-      get().fillManaPool(nextPlayerIndex)
-      
-      // Save game state after turn change
-      get().saveGameState()
+      // Use the shared helper to advance turns
+      advanceToNextPlayer(nextPlayerIndex)
     },
 
     advancePhantomTurn: () => {
@@ -313,34 +329,8 @@ export const useGameStore = create<GameState>()((set, get) => {
       // Get the next player index
       const nextPlayerIndex = (activePlayerIndex + 1) % players.length
       
-      // Create copy of players
-      const updatedPlayers = [...players];
-      
-      // Reset mana pool for current player
-      updatedPlayers[activePlayerIndex] = {
-        ...updatedPlayers[activePlayerIndex],
-        manaPool: { ...defaultManaPool },
-        lands: updatedPlayers[activePlayerIndex].lands.map((land: Land) => ({
-          ...land,
-          tapped: false
-        }))
-      };
-      
-      // Check if we've completed a full cycle back to the actual player
-      const isPhantomPhase = nextPlayerIndex !== get().actualPlayerIndex;
-      
-      set({
-        players: updatedPlayers,
-        activePlayerIndex: nextPlayerIndex,
-        displayedPlayerIndex: nextPlayerIndex,
-        isPhantomPhase
-      });
-      
-      // Fill mana pool for next player
-      get().fillManaPool(nextPlayerIndex)
-      
-      // Save game state
-      get().saveGameState()
+      // Use the shared helper to advance turns
+      advanceToNextPlayer(nextPlayerIndex)
     },
 
     setTimerRunning: (isRunning) => {
@@ -356,7 +346,11 @@ export const useGameStore = create<GameState>()((set, get) => {
 
     endGame: () => {
       // Clear saved game state
-      localStorage.removeItem(GAME_STATE_KEY)
+      try {
+        localStorage.removeItem(GAME_STATE_KEY)
+      } catch (error) {
+        console.error('Failed to clear saved game:', error)
+      }
       
       set({
         gameStarted: false,
@@ -388,7 +382,11 @@ export const useGameStore = create<GameState>()((set, get) => {
       set({ settings: updatedSettings });
       
       // Save settings to localStorage
-      localStorage.setItem(GAME_SETTINGS_KEY, JSON.stringify(updatedSettings));
+      try {
+        localStorage.setItem(GAME_SETTINGS_KEY, JSON.stringify(updatedSettings));
+      } catch (error) {
+        console.error('Failed to save settings:', error)
+      }
       
       // Update player life totals if game hasn't started
       const { gameStarted, players } = get()
@@ -472,9 +470,12 @@ export const useGameStore = create<GameState>()((set, get) => {
           timestamp: Date.now()
         }
         
-        localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState))
-        
-        set({ hasSavedGame: true });
+        try {
+          localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState))
+          set({ hasSavedGame: true });
+        } catch (error) {
+          console.error('Failed to save game state:', error)
+        }
       }
     }
   }

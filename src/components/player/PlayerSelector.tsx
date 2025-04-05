@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, User } from 'lucide-react';
@@ -19,10 +19,51 @@ const PlayerSelector: React.FC<PlayerSelectorProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   
+  const toggleMenu = useCallback(() => setIsOpen(prev => !prev), []);
+  
+  const handleSelectPlayer = useCallback((index: number) => {
+    onSelectPlayer(index);
+    setIsOpen(false);
+  }, [onSelectPlayer]);
+  
+  // Memoize the player buttons to prevent unnecessary re-renders
+  const playerButtons = useMemo(() => {
+    return players.map((player, index) => (
+      <motion.button
+        key={player.id}
+        onClick={() => handleSelectPlayer(index)}
+        className={`flex w-full items-center gap-2 px-3 py-2 text-sm ${
+          index === selectedIndex 
+            ? 'bg-primary/10 text-primary font-medium' 
+            : 'hover:bg-muted/50'
+        } ${
+          index === activePlayerIndex 
+            ? 'border-l-2 border-primary pl-[10px]' 
+            : ''
+        }`}
+        whileHover={{ x: 2 }}
+        transition={{ duration: 0.1 }}
+      >
+        <User className={`h-3.5 w-3.5 ${
+          index === activePlayerIndex 
+            ? 'text-primary' 
+            : 'text-muted-foreground'
+        }`} />
+        <span>{player.name}</span>
+        
+        {player.isPhantom && (
+          <span className="ml-1 text-xs text-muted-foreground">(Remote)</span>
+        )}
+        
+        {index === activePlayerIndex && (
+          <span className="ml-auto text-xs text-primary font-medium">Active</span>
+        )}
+      </motion.button>
+    ));
+  }, [players, selectedIndex, activePlayerIndex, handleSelectPlayer]);
+  
   // Render nothing if less than 2 players
   if (players.length < 2) return null;
-  
-  const toggleMenu = () => setIsOpen(!isOpen);
   
   return (
     <div className="my-4 relative">
@@ -48,41 +89,7 @@ const PlayerSelector: React.FC<PlayerSelectorProps> = ({
             className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-border bg-card/95 backdrop-blur-sm shadow-lg"
           >
             <div className="py-1 max-h-[200px] overflow-y-auto">
-              {players.map((player, index) => (
-                <motion.button
-                  key={player.id}
-                  onClick={() => {
-                    onSelectPlayer(index);
-                    setIsOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-2 px-3 py-2 text-sm ${
-                    index === selectedIndex 
-                      ? 'bg-primary/10 text-primary font-medium' 
-                      : 'hover:bg-muted/50'
-                  } ${
-                    index === activePlayerIndex 
-                      ? 'border-l-2 border-primary pl-[10px]' 
-                      : ''
-                  }`}
-                  whileHover={{ x: 2 }}
-                  transition={{ duration: 0.1 }}
-                >
-                  <User className={`h-3.5 w-3.5 ${
-                    index === activePlayerIndex 
-                      ? 'text-primary' 
-                      : 'text-muted-foreground'
-                  }`} />
-                  <span>{player.name}</span>
-                  
-                  {player.isPhantom && (
-                    <span className="ml-1 text-xs text-muted-foreground">(Remote)</span>
-                  )}
-                  
-                  {index === activePlayerIndex && (
-                    <span className="ml-auto text-xs text-primary font-medium">Active</span>
-                  )}
-                </motion.button>
-              ))}
+              {playerButtons}
             </div>
           </motion.div>
         )}
@@ -91,4 +98,4 @@ const PlayerSelector: React.FC<PlayerSelectorProps> = ({
   );
 };
 
-export default PlayerSelector; 
+export default React.memo(PlayerSelector); 

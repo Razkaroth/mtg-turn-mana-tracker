@@ -12,7 +12,27 @@ export const usePlayer = (playerId: number) => {
   ) as PlayerData | undefined
   
   if (!player) {
-    throw new Error(`Player with ID ${playerId} not found`)
+    console.error(`Player with ID ${playerId} not found in game state`)
+    // Return a stub implementation to prevent crashes
+    return {
+      player: {
+        id: playerId,
+        name: 'Unknown Player',
+        life: 0,
+        lands: [],
+        manaPool: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }
+      },
+      updateLife: () => {},
+      addLand: () => {},
+      removeLand: () => {},
+      removeLandByType: () => false,
+      toggleLand: () => {},
+      decrementMana: () => {},
+      incrementMana: () => {},
+      updateName: () => {},
+      totalMana: 0,
+      landCounts: {}
+    }
   }
   
   // Updates the player's life total
@@ -84,18 +104,20 @@ export const usePlayer = (playerId: number) => {
   }
   
   // Decrements mana of a specific type
-  const decrementMana = (manaType: string) => {
-    if (player.manaPool[manaType as keyof typeof player.manaPool] > 0) {
+  const decrementMana = (manaType: ManaType | string) => {
+    const manaKey = manaType as keyof typeof player.manaPool;
+    if (player.manaPool[manaKey] > 0) {
       const updatedManaPool = { ...player.manaPool }
-      updatedManaPool[manaType as keyof typeof updatedManaPool]--
+      updatedManaPool[manaKey]--
       updatePlayer(playerId, { manaPool: updatedManaPool })
     }
   }
   
   // Increments mana of a specific type
-  const incrementMana = (manaType: string) => {
+  const incrementMana = (manaType: ManaType | string) => {
+    const manaKey = manaType as keyof typeof player.manaPool;
     const updatedManaPool = { ...player.manaPool }
-    updatedManaPool[manaType as keyof typeof updatedManaPool]++
+    updatedManaPool[manaKey]++
     updatePlayer(playerId, { manaPool: updatedManaPool })
   }
   

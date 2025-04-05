@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { PlayerData } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,8 +29,8 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
   const isPhantomPhase = useGameStore(state => state.isPhantomPhase);
   
   // Convert minutes from settings to milliseconds
-  const defaultTime = settings.chessClockMinutes * 60 * 1000;
-  const incrementMs = settings.timeIncrement * 1000; // Convert increment seconds to ms
+  const defaultTime = useMemo(() => settings.chessClockMinutes * 60 * 1000, [settings.chessClockMinutes]);
+  const incrementMs = useMemo(() => settings.timeIncrement * 1000, [settings.timeIncrement]); // Convert increment seconds to ms
   
   const [times, setTimes] = useState<number[]>(players.map(() => defaultTime));
   const timerRef = useRef<number | null>(null);
@@ -53,74 +53,80 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
     });
   }, [players.length, defaultTime]);
   
+  // Apply Fischer timing increment
+  const applyFischerIncrement = useCallback((prevPlayerIndex: number) => {
+    if (prevPlayerIndex < 0 || settings.chessClockMode !== 'fischer') return;
+    
+    setTimes(prevTimes => {
+      const newTimes = [...prevTimes];
+      if (prevPlayerIndex >= 0 && prevPlayerIndex < newTimes.length) {
+        newTimes[prevPlayerIndex] = Math.min(
+          newTimes[prevPlayerIndex] + incrementMs,
+          defaultTime * 2 // Cap at 2x the default time to prevent excessive accumulation
+        );
+        
+        // Show the increment animation
+        const prevPlayer = players[prevPlayerIndex];
+        if (prevPlayer) {
+          setLastIncrementTime({
+            playerId: prevPlayer.id,
+            amount: incrementMs
+          });
+          
+          // Clear the increment indicator after a delay
+          setTimeout(() => {
+            setLastIncrementTime(null);
+          }, 1500);
+        }
+      }
+      return newTimes;
+    });
+  }, [players, incrementMs, defaultTime, settings.chessClockMode]);
+  
+  // Apply Bronstein timing
+  const applyBronsteinIncrement = useCallback((prevPlayerIndex: number) => {
+    if (prevPlayerIndex < 0 || settings.chessClockMode !== 'bronstein' || turnStartTimeRef.current <= 0) return;
+    
+    const turnEndTime = Date.now();
+    const timeUsed = turnEndTime - turnStartTimeRef.current;
+    const timeToAddBack = Math.min(timeUsed, incrementMs);
+    
+    setTimes(prevTimes => {
+      const newTimes = [...prevTimes];
+      if (prevPlayerIndex >= 0 && prevPlayerIndex < newTimes.length) {
+        newTimes[prevPlayerIndex] = Math.min(
+          newTimes[prevPlayerIndex] + timeToAddBack,
+          defaultTime // Cap at default time to prevent excessive accumulation
+        );
+        
+        // Show the increment animation for Bronstein timing
+        const prevPlayer = players[prevPlayerIndex];
+        if (prevPlayer && timeToAddBack > 0) {
+          setLastIncrementTime({
+            playerId: prevPlayer.id,
+            amount: timeToAddBack
+          });
+          
+          // Clear the increment indicator after a delay
+          setTimeout(() => {
+            setLastIncrementTime(null);
+          }, 1500);
+        }
+      }
+      return newTimes;
+    });
+  }, [players, incrementMs, defaultTime, settings.chessClockMode]);
+  
   // Apply increment when player changes (for Fischer timing)
   // Or record the turn start time (for Bronstein timing)
   useEffect(() => {
     // Detect player turn change
     if (prevPlayerIndexRef.current !== activePlayerIndex && prevPlayerIndexRef.current !== -1) {
       // Handle Fischer timing - add increment to previous player
-      if (settings.chessClockMode === 'fischer') {
-        setTimes(prevTimes => {
-          const newTimes = [...prevTimes];
-          // Add increment to the player who just finished their turn
-          const prevPlayerIndex = prevPlayerIndexRef.current;
-          if (prevPlayerIndex >= 0 && prevPlayerIndex < newTimes.length) {
-            newTimes[prevPlayerIndex] = Math.min(
-              newTimes[prevPlayerIndex] + incrementMs,
-              defaultTime * 2 // Cap at 2x the default time to prevent excessive accumulation
-            );
-            
-            // Show the increment animation
-            const prevPlayer = players[prevPlayerIndex];
-            if (prevPlayer) {
-              setLastIncrementTime({
-                playerId: prevPlayer.id,
-                amount: incrementMs
-              });
-              
-              // Clear the increment indicator after a delay
-              setTimeout(() => {
-                setLastIncrementTime(null);
-              }, 1500);
-            }
-          }
-          return newTimes;
-        });
-      }
+      applyFischerIncrement(prevPlayerIndexRef.current);
       
-      // Handle Bronstein timing - calculate used time and add back up to increment
-      if (settings.chessClockMode === 'bronstein' && turnStartTimeRef.current > 0) {
-        const turnEndTime = Date.now();
-        const timeUsed = turnEndTime - turnStartTimeRef.current;
-        const timeToAddBack = Math.min(timeUsed, incrementMs);
-        
-        // Add the time back to the player who just finished their turn
-        setTimes(prevTimes => {
-          const newTimes = [...prevTimes];
-          const prevPlayerIndex = prevPlayerIndexRef.current;
-          if (prevPlayerIndex >= 0 && prevPlayerIndex < newTimes.length) {
-            newTimes[prevPlayerIndex] = Math.min(
-              newTimes[prevPlayerIndex] + timeToAddBack,
-              defaultTime // Cap at default time to prevent excessive accumulation
-            );
-            
-            // Show the increment animation for Bronstein timing
-            const prevPlayer = players[prevPlayerIndex];
-            if (prevPlayer && timeToAddBack > 0) {
-              setLastIncrementTime({
-                playerId: prevPlayer.id,
-                amount: timeToAddBack
-              });
-              
-              // Clear the increment indicator after a delay
-              setTimeout(() => {
-                setLastIncrementTime(null);
-              }, 1500);
-            }
-          }
-          return newTimes;
-        });
-      }
+      // Handle Bronstein timing
+      applyBronsteinIncrement(prevPlayerIndexRef.current);
     }
     
     // Record turn start time for Bronstein timing
@@ -130,7 +136,7 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
     
     // Update the previous player index
     prevPlayerIndexRef.current = activePlayerIndex;
-  }, [activePlayerIndex, settings.chessClockMode, incrementMs, defaultTime, players]);
+  }, [activePlayerIndex, applyFischerIncrement, applyBronsteinIncrement, settings.chessClockMode]);
 
   // Handle timer logic
   useEffect(() => {
@@ -159,36 +165,38 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
       }, 100);
     } else if (timerRef.current) {
       clearInterval(timerRef.current);
+      timerRef.current = null;
     }
     
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
+        timerRef.current = null;
       }
     };
   }, [running, activePlayerIndex, onTurnEnd, isSinglePlayerMode, isPhantomPhase, settings.chessClockMode]);
 
-  const formatTime = (ms: number): string => {
+  const formatTime = useCallback((ms: number): string => {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  };
+  }, []);
 
-  const resetTimers = (): void => {
+  const resetTimers = useCallback((): void => {
     setTimes(players.map(() => defaultTime));
     prevPlayerIndexRef.current = -1;
     turnStartTimeRef.current = 0;
-  };
+  }, [players, defaultTime]);
 
   // Helper to get time color based on remaining time
-  const getTimeColor = (ms: number): string => {
+  const getTimeColor = useCallback((ms: number): string => {
     if (ms <= 60000) return 'text-red-500'; // Last minute
     if (ms <= 2 * 60000) return 'text-amber-500'; // Last 2 minutes
     return '';
-  };
+  }, []);
   
   // Helper to get clock mode display name and icon
-  const getClockModeInfo = () => {
+  const getClockModeInfo = useCallback(() => {
     switch (settings.chessClockMode) {
       case 'fischer':
         return {
@@ -206,9 +214,9 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
           tooltip: 'Fixed time per player'
         };
     }
-  };
+  }, [settings.chessClockMode, settings.timeIncrement]);
   
-  const clockModeInfo = getClockModeInfo();
+  const clockModeInfo = useMemo(() => getClockModeInfo(), [getClockModeInfo]);
 
   return (
     <Card className="mb-4 border-border/50 bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden">
@@ -332,4 +340,4 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
   );
 };
 
-export default ChessTimer; 
+export default React.memo(ChessTimer); 
