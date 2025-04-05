@@ -1,12 +1,12 @@
 import React from 'react';
-import { useGame } from '../../context/GameContext';
+import { useGameStore } from '@/stores/gameStore';
 import { Button } from '@/components/ui/button';
 import { GameplayUI } from './GameplayUI';
 import { XCircle } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export const GameScreen: React.FC = () => {
-  const { endGame } = useGame();
+  const endGame = useGameStore(state => state.endGame);
   
   return (
     <div className="flex flex-col h-screen">

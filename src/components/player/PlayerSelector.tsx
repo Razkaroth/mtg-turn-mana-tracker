@@ -1,110 +1,92 @@
-import React from 'react';
-import { PlayerData } from '../../types';
-import { Button } from "@/components/ui/button";
-import { ChevronUp } from "lucide-react";
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { ChevronDown, User } from 'lucide-react';
+import { PlayerData } from '@/types';
 
 interface PlayerSelectorProps {
   players: PlayerData[];
-  displayedPlayerIndex: number;
+  selectedIndex: number;
   activePlayerIndex: number;
   onSelectPlayer: (index: number) => void;
 }
 
 const PlayerSelector: React.FC<PlayerSelectorProps> = ({
   players,
-  displayedPlayerIndex,
+  selectedIndex,
   activePlayerIndex,
-  onSelectPlayer,
+  onSelectPlayer
 }) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  const toggleSelector = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const handleSelectPlayer = (index: number) => {
-    onSelectPlayer(index);
-    setIsOpen(false);
-  };
-
-  // Don't render if there's only one player
-  if (players.length <= 1) return null;
-
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // Render nothing if less than 2 players
+  if (players.length < 2) return null;
+  
+  const toggleMenu = () => setIsOpen(!isOpen);
+  
   return (
-    <div className="relative w-full">
-      {/* Player selection menu */}
+    <div className="my-4 relative">
+      <Button
+        variant="outline"
+        onClick={toggleMenu}
+        className="w-full bg-muted/50 justify-between text-sm items-center h-10 border-border/50"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground">View Player:</span>
+          <span className="font-medium">{players[selectedIndex].name}</span>
+        </div>
+        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </Button>
+      
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20, transition: { duration: 0.2 } }}
+            initial={{ opacity: 0, y: -5, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -5, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute bottom-full left-0 right-0 bg-background border-t border-border/40 shadow-lg rounded-t-lg overflow-hidden"
+            className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-border bg-card/95 backdrop-blur-sm shadow-lg"
           >
-            <div className="max-h-[40vh] overflow-y-auto p-1 divide-y divide-border/20">
+            <div className="py-1 max-h-[200px] overflow-y-auto">
               {players.map((player, index) => (
                 <motion.button
                   key={player.id}
-                  whileHover={{ backgroundColor: 'rgba(var(--muted), 0.5)' }}
-                  onClick={() => handleSelectPlayer(index)}
-                  className={`w-full text-left p-3 focus:outline-none transition-colors flex items-center justify-between ${
-                    index === displayedPlayerIndex ? 'bg-muted' : ''
+                  onClick={() => {
+                    onSelectPlayer(index);
+                    setIsOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2 px-3 py-2 text-sm ${
+                    index === selectedIndex 
+                      ? 'bg-primary/10 text-primary font-medium' 
+                      : 'hover:bg-muted/50'
+                  } ${
+                    index === activePlayerIndex 
+                      ? 'border-l-2 border-primary pl-[10px]' 
+                      : ''
                   }`}
+                  whileHover={{ x: 2 }}
+                  transition={{ duration: 0.1 }}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{player.name}</span>
-                    {index === activePlayerIndex && (
-                      <span className="text-xs bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                        Active
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <span className="font-mono">♥</span>
-                      {player.life}
-                    </span>
-                    <span className="h-4 w-px bg-border mx-0.5"></span>
-                    <span className="flex items-center gap-1">
-                      <span className="font-mono">⚡</span>
-                      {Object.values(player.manaPool).reduce((sum, count) => sum + count, 0)}
-                    </span>
-                  </div>
+                  <User className={`h-3.5 w-3.5 ${
+                    index === activePlayerIndex 
+                      ? 'text-primary' 
+                      : 'text-muted-foreground'
+                  }`} />
+                  <span>{player.name}</span>
+                  
+                  {player.isPhantom && (
+                    <span className="ml-1 text-xs text-muted-foreground">(Remote)</span>
+                  )}
+                  
+                  {index === activePlayerIndex && (
+                    <span className="ml-auto text-xs text-primary font-medium">Active</span>
+                  )}
                 </motion.button>
               ))}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-      
-      {/* Selector button */}
-      <Button
-        variant="ghost"
-        onClick={toggleSelector}
-        className={`w-full flex items-center justify-between rounded-none py-3 h-auto border-none ${
-          isOpen ? 'bg-muted' : 'bg-background hover:bg-card/50'
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium truncate max-w-[150px]">
-            {players[displayedPlayerIndex]?.name || "Select Player"}
-          </span>
-          {displayedPlayerIndex === activePlayerIndex && (
-            <span className="text-xs bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-medium">
-              Active
-            </span>
-          )}
-        </div>
-        
-        <motion.div
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <ChevronUp className="h-4 w-4 text-muted-foreground" />
-        </motion.div>
-      </Button>
     </div>
   );
 };

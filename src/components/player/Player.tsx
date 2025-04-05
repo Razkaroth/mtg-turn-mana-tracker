@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { PlayerData, Land, ManaType as GameManaType } from '../../types';
+import { usePlayer } from '../../hooks/usePlayer';
+import { Land, ManaType as GameManaType } from '../../types';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Minus, X, Ghost, Edit, Droplet, Trash2, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface ManaType {
+interface ManaDisplay {
   symbol: string;
   color: string;
   display: string;
@@ -15,23 +16,22 @@ interface ManaType {
   iconColor: string; // Text color for the icon
 }
 
-interface LandType {
+interface LandDisplay {
   type: string;
-  produces: string;
+  produces: GameManaType;
   symbol: string;
   bgClassName: string; // Tailwind class for background
   iconColor: string; // Text color for the icon
 }
 
 interface PlayerProps {
-  player: PlayerData;
+  playerId: number;
   isActive: boolean;
-  onUpdate: (updatedData: Partial<PlayerData>) => void;
   onRemove: () => void;
   isMinimal?: boolean; // For minimal display of phantom players
 }
 
-const MANA_TYPES: ManaType[] = [
+const MANA_TYPES: ManaDisplay[] = [
   { symbol: 'W', color: 'white', display: '☀️', bgClassName: 'bg-gradient-to-b from-amber-50 to-amber-100/70', iconColor: 'text-amber-600' },
   { symbol: 'U', color: 'blue', display: '💧', bgClassName: 'bg-gradient-to-b from-blue-50 to-blue-100/70', iconColor: 'text-blue-600' },
   { symbol: 'B', color: 'black', display: '💀', bgClassName: 'bg-gradient-to-b from-neutral-100 to-neutral-200/70', iconColor: 'text-neutral-700' },
@@ -40,7 +40,7 @@ const MANA_TYPES: ManaType[] = [
   { symbol: 'C', color: 'colorless', display: '💠', bgClassName: 'bg-gradient-to-b from-purple-50 to-purple-100/70', iconColor: 'text-purple-600' }
 ];
 
-const LAND_TYPES: LandType[] = [
+const LAND_TYPES: LandDisplay[] = [
   { type: 'Plains', produces: 'W', symbol: '☀️', bgClassName: 'bg-gradient-to-b from-amber-50 to-amber-100/70', iconColor: 'text-amber-600' },
   { type: 'Island', produces: 'U', symbol: '💧', bgClassName: 'bg-gradient-to-b from-blue-50 to-blue-100/70', iconColor: 'text-blue-600' },
   { type: 'Swamp', produces: 'B', symbol: '💀', bgClassName: 'bg-gradient-to-b from-neutral-100 to-neutral-200/70', iconColor: 'text-neutral-700' },
@@ -50,37 +50,40 @@ const LAND_TYPES: LandType[] = [
 ];
 
 const Player: React.FC<PlayerProps> = ({ 
-  player, 
+  playerId, 
   isActive, 
-  onUpdate, 
   onRemove,
   isMinimal = false 
 }) => {
+  // Use our custom hook to get player data and actions
+  const {
+    player,
+    updateLife,
+    addLand,
+    removeLand,
+    toggleLand,
+    decrementMana,
+    incrementMana,
+    updateName,
+    totalMana,
+    landCounts
+  } = usePlayer(playerId);
+
   const [nameEditing, setNameEditing] = useState<boolean>(false);
   const [newName, setNewName] = useState<string>(player.name);
   const [activeTab, setActiveTab] = useState<string>("mana");
   const [tappedLandId, setTappedLandId] = useState<number | null>(null);
 
-  const updateLife = (amount: number) => {
-    onUpdate({ life: player.life + amount });
+  const handleAddLand = (landType: LandDisplay) => {
+    addLand(landType.type, landType.produces);
   };
 
-  const addLand = (landType: LandType) => {
-    const newLand: Land = { 
-      id: Date.now(), 
-      type: landType.type, 
-      tapped: false, 
-      produces: landType.produces as GameManaType
-    };
-    onUpdate({ lands: [...player.lands, newLand] });
+  const handleRemoveLand = (landId: number) => {
+    removeLand(landId);
   };
 
-  const removeLand = (landId: number) => {
-    onUpdate({ lands: player.lands.filter((land: Land) => land.id !== landId) });
-  };
-
-  // Function to remove the first land of a specific type
-  const removeLandByType = (landType: string) => {
+  // Function to remove the first land of a specific type with animation
+  const handleRemoveLandByType = (landType: string) => {
     // Find the first land of the specified type
     const landToRemove = player.lands.find((land: Land) => land.type === landType);
     if (landToRemove) {
@@ -95,72 +98,21 @@ const Player: React.FC<PlayerProps> = ({
     }
   };
 
-  const toggleLand = (landId: number) => {
-    // Get the land being toggled
-    const land = player.lands.find((l: Land) => l.id === landId);
-    if (!land) return;
-
+  const handleToggleLand = (landId: number) => {
     // Trigger the animation
     setTappedLandId(landId);
     
-    // If we're tapping the land (currently untapped), add mana to the pool
-    if (!land.tapped) {
-      const updatedManaPool = { ...player.manaPool };
-      updatedManaPool[land.produces as keyof typeof updatedManaPool]++;
-      
-      // Update mana pool and toggle the land
-      onUpdate({ 
-        manaPool: updatedManaPool,
-        lands: player.lands.map((l: Land) => {
-          if (l.id === landId) {
-            return { ...l, tapped: true };
-          }
-          return l;
-        })
-      });
-    } else {
-      // Just toggle the land to untapped without affecting mana pool
-      onUpdate({
-        lands: player.lands.map((l: Land) => {
-          if (l.id === landId) {
-            return { ...l, tapped: false };
-          }
-          return l;
-        })
-      });
-    }
+    // Toggle the land
+    toggleLand(landId);
     
     // Reset the animation trigger after animation completes
     setTimeout(() => setTappedLandId(null), 500);
   };
 
-  const decrementMana = (manaType: string) => {
-    if (player.manaPool[manaType as keyof typeof player.manaPool] > 0) {
-      const updatedManaPool = { ...player.manaPool };
-      updatedManaPool[manaType as keyof typeof updatedManaPool]--;
-      onUpdate({ manaPool: updatedManaPool });
-    }
-  };
-
-  const incrementMana = (manaType: string) => {
-    const updatedManaPool = { ...player.manaPool };
-    updatedManaPool[manaType as keyof typeof updatedManaPool]++;
-    onUpdate({ manaPool: updatedManaPool });
-  };
-
   const finishNameEdit = () => {
-    onUpdate({ name: newName });
+    updateName(newName);
     setNameEditing(false);
   };
-
-  // Helper to count total mana
-  const totalMana = Object.values(player.manaPool).reduce((sum, count) => sum + count, 0);
-
-  // Get counts of each land type
-  const landCounts = player.lands.reduce((counts: Record<string, number>, land) => {
-    counts[land.type] = (counts[land.type] || 0) + 1;
-    return counts;
-  }, {});
 
   // If minimal display is requested (for phantom players), show a simplified card
   if (isMinimal) {
@@ -239,7 +191,7 @@ const Player: React.FC<PlayerProps> = ({
           </Button>
         </div>
 
-        {/* Life counter - ENHANCED */}
+        {/* Life counter */}
         <motion.div
           initial={{ scale: 1 }}
           whileHover={{ scale: 1.02 }}
@@ -401,7 +353,7 @@ const Player: React.FC<PlayerProps> = ({
           </TabsContent>
           
           <TabsContent value="lands" className="mt-0 rounded-xl bg-card/50 backdrop-blur-sm pt-4 px-4 pb-3 border border-border/30 shadow-sm">
-            {/* Land type buttons - ENHANCED */}
+            {/* Land type buttons */}
             <div className="flex flex-wrap justify-center gap-2 mb-5">
               {LAND_TYPES.map(land => (
                 <motion.div
@@ -415,7 +367,7 @@ const Player: React.FC<PlayerProps> = ({
                     variant="ghost"
                     size="icon"
                     className={`h-12 w-12 ${land.bgClassName} border-2 border-border/40 hover:border-primary/40 hover:bg-background hover:shadow-md transition-all duration-200 shadow rounded-xl`}
-                    onClick={() => addLand(land)}
+                    onClick={() => handleAddLand(land)}
                     title={land.type}
                   >
                     <span className={`text-lg ${land.iconColor}`}>{land.symbol}</span>
@@ -452,7 +404,7 @@ const Player: React.FC<PlayerProps> = ({
                         style={{ 
                           backgroundImage: land.tapped ? 'linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.08))' : '' 
                         }}
-                        onClick={() => toggleLand(land.id)}
+                        onClick={() => handleToggleLand(land.id)}
                       >
                         <span className={`text-xl ${landType?.iconColor || ''}`}>{landType?.symbol}</span>
                         <div className="absolute bottom-1 left-0 right-0 text-center">
@@ -471,7 +423,7 @@ const Player: React.FC<PlayerProps> = ({
                             className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 p-0 border border-destructive/30 hover:border-destructive shadow-sm z-10"
                             onClick={(e) => {
                               e.stopPropagation();
-                              removeLand(land.id);
+                              handleRemoveLand(land.id);
                             }}
                           >
                             <X className="h-3 w-3" />
@@ -484,7 +436,7 @@ const Player: React.FC<PlayerProps> = ({
               </div>
             </div>
             
-            {/* Remove Lands section - ENHANCED */}
+            {/* Remove Lands section */}
             {player.lands.length > 0 && (
               <motion.div 
                 className="mt-5 pt-4 border-t border-border/30"
@@ -512,7 +464,7 @@ const Player: React.FC<PlayerProps> = ({
                           variant="outline"
                           size="default"
                           className={`h-11 py-2 px-3 ${land.bgClassName} border-2 border-border/40 hover:bg-destructive/10 hover:border-destructive/40 shadow-md rounded-xl`}
-                          onClick={() => removeLandByType(land.type)}
+                          onClick={() => handleRemoveLandByType(land.type)}
                         >
                           <span className={`mr-2 text-lg ${land.iconColor}`}>{land.symbol}</span>
                           <span className="font-medium text-sm bg-background/40 rounded-full min-w-[1.5rem] h-6 inline-flex items-center justify-center px-1.5 border border-border/30">

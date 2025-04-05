@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { useGame } from '../../context/GameContext';
+import { useGameStore } from '@/stores/gameStore';
 import { GameSettings } from '../../types';
 import { Settings, Clock, Heart, Plus, Minus } from 'lucide-react';
 
@@ -20,7 +20,8 @@ interface SettingsPanelProps {
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ open, onOpenChange }) => {
-  const { settings, updateSettings } = useGame();
+  const settings = useGameStore(state => state.settings);
+  const updateSettings = useGameStore(state => state.updateSettings);
   
   // Function to update a specific setting
   const updateSetting = <K extends keyof GameSettings>(
@@ -253,10 +254,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ open, onOpenChange }) => 
                       key={value}
                       variant={settings.timeIncrement === value ? "default" : "outline"}
                       size="sm"
-                      className={`text-xs ${settings.timeIncrement === value ? "bg-primary text-primary-foreground" : ""}`}
+                      className={settings.timeIncrement === value ? "bg-primary text-primary-foreground" : ""}
                       onClick={() => updateSetting('timeIncrement', value)}
                     >
-                      {value} sec
+                      {value}s
                     </Button>
                   ))}
                 </div>
@@ -265,9 +266,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ open, onOpenChange }) => 
           </div>
         </div>
         
-        <SheetFooter className="mt-6">
+        <SheetFooter>
           <SheetClose asChild>
-            <Button>Done</Button>
+            <Button>Save Changes</Button>
           </SheetClose>
         </SheetFooter>
       </SheetContent>

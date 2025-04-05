@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RotateCcw, Clock, Users, Play, Pause } from "lucide-react";
-import { useGame } from '../../context/GameContext';
+import { useGameStore } from '@/stores/gameStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 
@@ -23,8 +23,10 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
   onTurnEnd,
   setTimerRunning
 }) => {
-  // Get time from settings
-  const { settings } = useGame();
+  // Get time from Zustand settings
+  const settings = useGameStore(state => state.settings);
+  const isSinglePlayerMode = useGameStore(state => state.isSinglePlayerMode);
+  const isPhantomPhase = useGameStore(state => state.isPhantomPhase);
   
   // Convert minutes from settings to milliseconds
   const defaultTime = settings.chessClockMinutes * 60 * 1000;
@@ -33,7 +35,6 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
   const [times, setTimes] = useState<number[]>(players.map(() => defaultTime));
   const timerRef = useRef<number | null>(null);
   const [timerView, setTimerView] = useState<'active' | 'all'>('active');
-  const { isSinglePlayerMode, isPhantomPhase } = useGame();
   
   // For Bronstein timing mode, we need to track when a player's turn starts
   const turnStartTimeRef = useRef<number>(0);
@@ -129,7 +130,7 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
     
     // Update the previous player index
     prevPlayerIndexRef.current = activePlayerIndex;
-  }, [activePlayerIndex, settings.chessClockMode, incrementMs, defaultTime]);
+  }, [activePlayerIndex, settings.chessClockMode, incrementMs, defaultTime, players]);
 
   // Handle timer logic
   useEffect(() => {
@@ -248,145 +249,84 @@ const ChessTimer: React.FC<ChessTimerProps> = ({
       <CardContent className="p-3 pt-2">
         {timerView === 'active' ? (
           <div className="flex justify-center mb-3">
-            <motion.div 
-              initial={{ scale: 0.95 }}
-              animate={{ 
-                scale: 1,
-                borderColor: running && !(isSinglePlayerMode && isPhantomPhase)
-                  ? 'rgba(var(--primary), 0.3)'
-                  : 'rgba(var(--muted-foreground), 0.2)'
-              }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-              className={`relative p-2 px-4 min-w-[180px] rounded-lg border text-center ${
-                isSinglePlayerMode && isPhantomPhase
-                  ? 'bg-muted/30 text-muted-foreground border-muted-foreground/20'
-                  : 'bg-gradient-to-b from-card to-background text-foreground border-primary/30'
-              }`}
-            >
-              <span className="block text-xs font-medium mb-1 truncate max-w-full">
-                {isSinglePlayerMode && isPhantomPhase 
-                  ? "Opponents' Phase" 
-                  : players[activePlayerIndex]?.name || "Player 1"}
-              </span>
-              <motion.span 
-                key={times[activePlayerIndex]}
-                initial={{ opacity: 0.7, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                className={`text-2xl font-mono font-semibold ${getTimeColor(times[activePlayerIndex] || 0)}`}
-              >
-                {formatTime(times[activePlayerIndex] || 0)}
-              </motion.span>
-              
-              {/* Time increment info and indicator */}
-              <div className="relative">
-                {settings.chessClockMode !== 'standard' && (
-                  <div className="text-xs mt-1 text-muted-foreground">
-                    {settings.chessClockMode === 'fischer' ? (
-                      <span>+{settings.timeIncrement}s per move</span>
-                    ) : (
-                      <span>up to +{settings.timeIncrement}s per move</span>
-                    )}
-                  </div>
-                )}
-                
-                {/* Show time increment indicator */}
-                {lastIncrementTime && lastIncrementTime.playerId === players[activePlayerIndex]?.id && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="text-xs text-green-500 font-medium absolute top-0 left-0 right-0 mt-1"
-                  >
-                    +{(lastIncrementTime.amount / 1000).toFixed(1)}s
-                  </motion.div>
-                )}
-              </div>
-              
-              {running && !(isSinglePlayerMode && isPhantomPhase) && (
-                <motion.div 
-                  className="absolute bottom-0 left-0 h-[2px] bg-primary/30"
-                  animate={{ width: ['0%', '100%'] }}
-                  transition={{ 
-                    duration: 1, 
-                    ease: "linear", 
-                    repeat: Infinity 
-                  }}
-                />
-              )}
-            </motion.div>
-          </div>
-        ) : (
-          <div className="flex flex-wrap justify-center gap-2 mb-3">
-            <AnimatePresence>
-              {players.map((player, index) => (
-                <motion.div 
-                  key={player.id}
+            <div className="flex items-center gap-2">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activePlayerIndex}
                   initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ 
-                    opacity: 1, 
-                    scale: 1,
-                    y: 0
-                  }}
+                  animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.2 }}
-                  className={`p-2 min-w-[110px] rounded-md text-center transition-all duration-300 ${
-                    index === activePlayerIndex 
-                      ? (isSinglePlayerMode && isPhantomPhase) 
-                        ? 'bg-muted/30 text-muted-foreground border border-primary/20'
-                        : 'bg-card border border-primary/30 text-foreground shadow-sm'
-                      : 'bg-muted/30 text-muted-foreground border border-transparent'
-                  }`}
+                  className="min-w-[120px] text-center"
                 >
-                  <span className="block text-xs font-medium mb-0.5 truncate max-w-full">{player.name}</span>
-                  <span className={`text-lg font-mono ${getTimeColor(times[index])}`}>
-                    {formatTime(times[index])}
-                  </span>
-                  
-                  {/* Show time increment indicator */}
+                  <div className="text-xs text-muted-foreground mb-1">
+                    {players[activePlayerIndex]?.name || 'Player'}
+                  </div>
+                  <div 
+                    className={`text-2xl font-mono font-bold ${getTimeColor(times[activePlayerIndex])}`}
+                  >
+                    {formatTime(times[activePlayerIndex])}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+              
+              <div className="flex flex-col gap-2">
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className={`h-7 w-7 ${running ? 'bg-card text-foreground' : 'bg-primary/10 text-primary'}`}
+                  onClick={() => setTimerRunning && setTimerRunning(!running)}
+                >
+                  {running ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={resetTimers}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            {players.map((player, index) => (
+              <div 
+                key={player.id} 
+                className={`text-center p-2 border rounded ${
+                  index === activePlayerIndex 
+                    ? 'bg-primary/5 border-primary/20' 
+                    : 'bg-card/70 border-border/40'
+                }`}
+              >
+                <div className="text-xs text-muted-foreground mb-1 truncate max-w-full">
+                  {player.name}
+                </div>
+                <div 
+                  className={`text-lg font-mono font-medium ${getTimeColor(times[index])}`}
+                >
+                  {formatTime(times[index])}
+                </div>
+                
+                {/* Time increment animation */}
+                <AnimatePresence>
                   {lastIncrementTime && lastIncrementTime.playerId === player.id && (
                     <motion.div
                       initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="text-xs text-green-500 font-medium mt-0.5"
+                      animate={{ opacity: 1, y: -5 }}
+                      exit={{ opacity: 0, y: -15 }}
+                      className="text-xs text-primary font-medium absolute"
                     >
-                      +{(lastIncrementTime.amount / 1000).toFixed(1)}s
+                      +{Math.round(lastIncrementTime.amount / 1000)}s
                     </motion.div>
                   )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                </AnimatePresence>
+              </div>
+            ))}
           </div>
         )}
-        
-        {/* Timer controls */}
-        <div className="flex items-center gap-2">
-          {setTimerRunning && (
-            <Button 
-              onClick={() => setTimerRunning(!running)}
-              variant={running ? "secondary" : "outline"}
-              className={`flex-1 py-2 h-auto flex items-center justify-center gap-2 border ${
-                running 
-                ? 'border-primary/40 text-primary hover:bg-primary/10' 
-                : 'border-border/40 hover:bg-background hover:border-border'
-              }`}
-            >
-              {running ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-              <span>{running ? 'Pause' : 'Start'}</span>
-            </Button>
-          )}
-          
-          <Button 
-            onClick={resetTimers}
-            variant="destructive"
-            size="icon"
-            className="h-10 w-10 rounded-md shrink-0"
-            title="Reset Timers"
-          >
-            <RotateCcw className="h-5 w-5" />
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );

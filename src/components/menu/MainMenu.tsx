@@ -25,14 +25,13 @@ import {
   Play,
   Info,
   RotateCcw,
-  Clock,
   Users,
   Smartphone,
   Check,
   Settings,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useGame } from "../../context/GameContext";
+import { useGameStore } from "@/stores/gameStore";
 import { useProfiles } from "../../context/ProfileContext";
 import { PlayerData, Profile } from "../../types";
 import ProfileSelector from "../profile/ProfileSelector";
@@ -50,8 +49,13 @@ interface SelectedPlayer {
 }
 
 export const MainMenu: React.FC = () => {
-  const { startGame, continueSavedGame, hasSavedGame, resetGame, settings } =
-    useGame();
+  // Get state and actions from the game store
+  const startGame = useGameStore((state) => state.startGame);
+  const resetGame = useGameStore((state) => state.resetGame);
+  const continueSavedGame = useGameStore((state) => state.continueSavedGame);
+  const hasSavedGame = useGameStore((state) => state.hasSavedGame);
+  const settings = useGameStore((state) => state.settings);
+  
   const { profiles, lastUsedProfileId } = useProfiles();
 
   const [selectedPlayers, setSelectedPlayers] = useState<SelectedPlayer[]>([
@@ -247,337 +251,316 @@ export const MainMenu: React.FC = () => {
     );
 
     setIsConfirmNewGameOpen(false);
-
-    // Start the game with the newly created players
     startGame(newPlayers, isSinglePlayerMode, playerPosition);
   };
 
-  // Check if any profiles are being used by multiple players
+  // Check if there are duplicate profiles selected
   const hasDuplicateProfiles = () => {
-    const usedProfileIds = selectedPlayers
-      .filter((p) => p.profile !== null)
-      .map((p) => p.profile!.id);
-
-    return usedProfileIds.length !== new Set(usedProfileIds).size;
+    const profileIds = selectedPlayers
+      .map((p) => p.profile?.id)
+      .filter((id) => id); // Remove nulls
+    const uniqueIds = new Set(profileIds);
+    return profileIds.length !== uniqueIds.size;
   };
 
-  const duplicateProfileWarning = hasDuplicateProfiles();
-
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 flex flex-col">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-primary">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="p-4 border-b border-border bg-card/50 backdrop-blur-sm flex justify-between items-center">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 text-transparent bg-clip-text">
           Auto-Magic-Ator 5000
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2 items-center">
           <Button
             variant="outline"
             size="sm"
-            className="w-9 px-0"
             onClick={() => setIsSettingsOpen(true)}
-            title="Game Settings"
           >
-            <Settings className="h-4 w-4" />
-            <span className="sr-only">Game Settings</span>
+            <Settings className="h-4 w-4 mr-1" />
+            Settings
           </Button>
           <ThemeToggle />
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-md mx-auto w-full">
-        {/* Continue Game Button (shown only when a saved game exists) */}
-        {hasSavedGame && (
-          <Card className="mb-4">
-            <CardContent className="pt-6 pb-4">
-              <Button
-                className="w-full gap-2 mb-2"
-                size="lg"
-                variant="default"
-                onClick={continueSavedGame}
-              >
-                <Clock className="h-5 w-5" />
-                Continue Saved Game
-              </Button>
-              <p className="text-sm text-muted-foreground text-center">
-                Resume your last game in progress
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <span>Game Setup</span>
-                <HelpTooltip
-                  content={
-                    <div className="space-y-2">
-                      <p>
-                        <strong>Game Modes:</strong>
-                      </p>
-                      <p>
-                        <strong>Single Player Mode:</strong> Track a game where
-                        you're the only real player using this device. Choose
-                        this if each player has their own device.
-                      </p>
-                      <p>
-                        <strong>Multiplayer Mode:</strong> Play with friends,
-                        passing the device between players during their
-                        respective turns.
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        You can add as many players as you want, and select
-                        player profiles to track stats across games.
-                      </p>
-                    </div>
-                  }
-                />
-              </div>
-              {duplicateProfileWarning && (
-                <div className="text-sm text-yellow-500 flex items-center gap-1">
-                  <Info className="h-4 w-4" />
-                  <span>Duplicate profiles</span>
-                </div>
-              )}
-            </CardTitle>
-            <CardDescription>
-              Select profiles or create new ones for each player
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            {/* Game Mode Selector */}
-            <div className="flex flex-col space-y-4">
-              <div className="rounded-lg border border-border p-4 bg-muted/20">
-                <div className="flex items-center justify-between mb-3">
-                  <Label
-                    htmlFor="single-player-mode"
-                    className="text-base font-medium flex items-center gap-2"
-                  >
-                    {isSinglePlayerMode ? (
-                      <>
-                        <Smartphone className="h-4 w-4 text-primary" />
-                        <span>Single Player Mode</span>
-                      </>
-                    ) : (
-                      <>
-                        <Users className="h-4 w-4 text-primary" />
-                        <span>Multiplayer Mode</span>
-                      </>
-                    )}
-                  </Label>
-                  <Switch
-                    id="single-player-mode"
-                    checked={isSinglePlayerMode}
-                    onCheckedChange={setIsSinglePlayerMode}
+      {/* Main content */}
+      <main className="flex-1 p-4 flex flex-col items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-md"
+        >
+          <Card className="border-border/40 shadow-lg">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl flex items-center justify-between">
+                <span>Start a New Game</span>
+                {hasSavedGame && (
+                  <HelpTooltip
+                    content={
+                      "You have a saved game in progress. You can continue it or start a new one."
+                    }
                   />
-                </div>
-
-                <p className="text-sm text-muted-foreground mb-2">
-                  {isSinglePlayerMode
-                    ? "Track your game from your perspective. Only you control this device."
-                    : "Play with friends, each taking turns on this device."}
-                </p>
-
-                {/* Player position selector (only in single player mode) */}
-                <AnimatePresence>
-                  {isSinglePlayerMode && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-3 pt-3 border-t border-border/40">
-                        <Label className="text-sm font-medium block mb-2">
-                          Select your position in turn order:
-                        </Label>
-                        <div className="grid grid-cols-4 gap-2">
-                          {selectedPlayers.map((player, index) => (
-                            <div
-                              key={index}
-                              className={`flex flex-col items-center justify-center rounded-md border cursor-pointer p-2 
-                                ${
-                                  playerPosition === index
-                                    ? "bg-primary/10 border-primary/40"
-                                    : "border-border hover:bg-muted/50"
-                                }`}
-                              onClick={() => setPlayerPosition(index)}
-                            >
-                              <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center 
-                                  ${
-                                    playerPosition === index
-                                      ? "bg-primary text-primary-foreground"
-                                      : "bg-muted text-muted-foreground"
-                                  }`}
-                              >
-                                {playerPosition === index ? (
-                                  <Check className="h-4 w-4" />
-                                ) : (
-                                  <span className="text-sm font-medium">
-                                    {index + 1}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-xs mt-1 text-center truncate w-full">
-                                {player.customName}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-
-            {/* Player list */}
-            {selectedPlayers.map((player, index) => (
-              <div
-                key={player.tempId}
-                className={`flex items-center gap-3 rounded-md border p-3 ${
-                  isSinglePlayerMode && playerPosition === index
-                    ? "border-primary/40 bg-primary/5"
-                    : "border-border"
-                }`}
-              >
-                <div
-                  className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    isSinglePlayerMode && playerPosition === index
-                      ? "bg-primary/20"
-                      : "bg-muted"
-                  }`}
-                >
-                  {isSinglePlayerMode && playerPosition === index ? (
-                    <Smartphone className="h-5 w-5 text-primary" />
-                  ) : player.profile ? (
-                    <User className="h-5 w-5 text-primary" />
-                  ) : (
-                    <User className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </div>
-
-                <div className="flex-1">
-                  {player.isEditingName ? (
-                    <Input
-                      value={player.customName}
-                      onChange={(e) => updateCustomName(index, e.target.value)}
-                      onBlur={() => finishEditingName(index)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && finishEditingName(index)
-                      }
-                      autoFocus
-                      className="h-8"
-                    />
-                  ) : (
-                    <div>
-                      <div
-                        className="font-medium cursor-pointer hover:text-primary"
-                        onClick={() => startEditingName(index)}
+                )}
+              </CardTitle>
+              <CardDescription>
+                Configure players and options before starting
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Game Mode Selection */}
+              <div className="space-y-1.5">
+                <Label htmlFor="single-player" className="text-sm font-medium">
+                  Game Mode
+                </Label>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center space-x-2 px-3 py-2 rounded-md border border-border/50 bg-card">
+                    <Users className="h-5 w-5 text-primary" />
+                    <div className="flex-1">
+                      <Label
+                        htmlFor="multi-player"
+                        className="text-sm font-medium cursor-pointer"
                       >
-                        {player.customName}
-                        {isSinglePlayerMode && playerPosition === index && (
-                          <span className="text-xs bg-primary/20 text-primary ml-2 px-1.5 py-0.5 rounded-full">
-                            You
-                          </span>
-                        )}
-                        {isSinglePlayerMode && playerPosition !== index && (
-                          <span className="text-xs text-muted-foreground ml-1">
-                            (Remote)
-                          </span>
-                        )}
-                      </div>
-                      {player.profile && (
-                        <div className="text-xs text-muted-foreground">
-                          Using profile: {player.profile.name}
-                        </div>
-                      )}
+                        Multiplayer Mode
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        All players share this device
+                      </p>
                     </div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1">
-                  {(!isSinglePlayerMode || playerPosition !== index) && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full hover:bg-muted hover:text-destructive"
-                      onClick={() => removePlayer(player.tempId)}
-                      disabled={
-                        selectedPlayers.length <= (isSinglePlayerMode ? 2 : 1)
+                    <Switch
+                      id="multi-player"
+                      checked={!isSinglePlayerMode}
+                      onCheckedChange={(checked) =>
+                        setIsSinglePlayerMode(!checked)
                       }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2 px-3 py-2 rounded-md border border-border/50 bg-card">
+                    <Smartphone className="h-5 w-5 text-primary" />
+                    <div className="flex-1">
+                      <Label
+                        htmlFor="single-player"
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        Single Player Mode
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        You're the only one using this device
+                      </p>
+                    </div>
+                    <Switch
+                      id="single-player"
+                      checked={isSinglePlayerMode}
+                      onCheckedChange={(checked) =>
+                        setIsSinglePlayerMode(checked)
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Players */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium">Players</Label>
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full hover:bg-muted"
-                    onClick={() => openProfileDialog(index)}
+                    variant="outline"
+                    size="sm"
+                    onClick={addPlayer}
+                    className="h-7 text-xs"
                   >
-                    <Edit className="h-4 w-4" />
+                    <PlusCircle className="h-3.5 w-3.5 mr-1" />
+                    Add Player
                   </Button>
                 </div>
+
+                {/* Player position selector for single player mode */}
+                {isSinglePlayerMode && selectedPlayers.length > 1 && (
+                  <div className="space-y-1.5 mb-2">
+                    <Label className="text-xs text-muted-foreground">
+                      Your Position
+                    </Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedPlayers.map((_, index) => (
+                        <Button
+                          key={index}
+                          size="sm"
+                          variant={
+                            playerPosition === index ? "default" : "outline"
+                          }
+                          className={`h-7 w-7 p-0 ${
+                            playerPosition === index
+                              ? "bg-primary text-primary-foreground"
+                              : "border-border/50"
+                          }`}
+                          onClick={() => setPlayerPosition(index)}
+                        >
+                          {index + 1}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Player list */}
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                  {selectedPlayers.map((player, index) => (
+                    <motion.div
+                      key={player.tempId}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Card
+                        className={`border border-border/40 ${
+                          isSinglePlayerMode && index === playerPosition
+                            ? "bg-primary/5 border-primary/20"
+                            : ""
+                        }`}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {/* Position badge for single player mode */}
+                              {isSinglePlayerMode && index === playerPosition && (
+                                <div className="bg-primary/20 px-1.5 py-0.5 rounded text-xs font-medium flex items-center gap-1">
+                                  <span>You</span>
+                                  <Check className="h-3 w-3" />
+                                </div>
+                              )}
+
+                              {/* Player name or input */}
+                              {player.isEditingName ? (
+                                <Input
+                                  className="h-8 text-sm"
+                                  value={player.customName}
+                                  onChange={(e) =>
+                                    updateCustomName(index, e.target.value)
+                                  }
+                                  onBlur={() => finishEditingName(index)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter")
+                                      finishEditingName(index);
+                                  }}
+                                  autoFocus
+                                />
+                              ) : (
+                                <div
+                                  className="flex items-center gap-1.5 cursor-pointer group"
+                                  onClick={() => startEditingName(index)}
+                                >
+                                  <span className="font-medium">
+                                    {player.customName}
+                                  </span>
+                                  <Edit className="h-3.5 w-3.5 opacity-0 group-hover:opacity-60" />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {/* Profile button */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={`h-7 px-2 text-xs ${
+                                  player.profile
+                                    ? "bg-primary/10 text-primary"
+                                    : "bg-muted hover:bg-muted"
+                                }`}
+                                onClick={() => openProfileDialog(index)}
+                              >
+                                <User className="h-3.5 w-3.5 mr-1.5" />
+                                {player.profile ? player.profile.name : "Profile"}
+                              </Button>
+
+                              {/* Remove button - don't show if it would go below minimum players */}
+                              {(selectedPlayers.length >
+                                (isSinglePlayerMode ? 2 : 1) ||
+                                index > 0) && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                  onClick={() => removePlayer(player.tempId)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-            ))}
 
-            {/* Add player button */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full flex items-center justify-center gap-1.5"
-              onClick={addPlayer}
-            >
-              <PlusCircle className="h-4 w-4" />
-              Add {isSinglePlayerMode ? "Opponent" : "Player"}
-            </Button>
-          </CardContent>
+              {/* Warnings */}
+              <AnimatePresence>
+                {hasDuplicateProfiles() && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="text-destructive text-xs flex items-center gap-1.5 px-2 py-1 bg-destructive/10 rounded"
+                  >
+                    <Info className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>
+                      You have duplicate profiles. Each player should have a
+                      unique profile.
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </CardContent>
 
-          <CardFooter className="pt-2">
-            <Button
-              className="w-full gap-2"
-              size="lg"
-              onClick={handleStartGame}
-            >
-              <Play className="h-5 w-5" />
-              Start Game
-            </Button>
-          </CardFooter>
-        </Card>
+            <CardFooter className="flex flex-col gap-3">
+              <div className="w-full flex gap-2">
+                <Button
+                  className="flex-1 gap-1.5"
+                  onClick={handleStartGame}
+                  disabled={selectedPlayers.length === 0}
+                >
+                  <Play className="h-4 w-4" />
+                  Start Game
+                </Button>
 
-        {/* Footer information */}
-        <div className="text-center text-sm text-muted-foreground">
-          <p>Auto-Magic-Ator 5000 by Raz</p>
-          <p className="text-xs">
-            A Magic: The Gathering turn and mana tracker
-          </p>
-          <p className="text-xs">
-            Because I'm too lazy to keep tapping and untapping my lands
-          </p>
-        </div>
-      </div>
+                {hasSavedGame && (
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-1.5"
+                    onClick={continueSavedGame}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Continue Saved
+                  </Button>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Starting life: {settings.startingLife} •{" "}
+                {settings.chessClockMode === "standard"
+                  ? `${settings.chessClockMinutes}min timer`
+                  : `${settings.chessClockMinutes}min (+${settings.timeIncrement}s)`}
+              </p>
+            </CardFooter>
+          </Card>
+        </motion.div>
+      </main>
 
       {/* Profile selection dialog */}
-      <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog
+        open={isProfileDialogOpen}
+        onOpenChange={setIsProfileDialogOpen}
+      >
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Select Profile</DialogTitle>
+            <DialogTitle>Select a Profile</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <ProfileSelector
-              onSelectProfile={handleSelectProfile}
-              currentProfileId={
-                currentEditingIndex !== null &&
-                selectedPlayers[currentEditingIndex].profile
-                  ? selectedPlayers[currentEditingIndex].profile?.id
-                  : undefined
-              }
-            />
+            <ProfileSelector onSelectProfile={handleSelectProfile} />
           </div>
           <DialogFooter>
             <DialogClose asChild>
@@ -592,33 +575,43 @@ export const MainMenu: React.FC = () => {
         open={isConfirmNewGameOpen}
         onOpenChange={setIsConfirmNewGameOpen}
       >
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Start New Game?</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <p>
-              You have a saved game in progress. Starting a new game will
-              overwrite your saved game.
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              This action cannot be undone.
+              You have a game in progress. Starting a new game will overwrite your
+              saved game.
             </p>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button variant="default" onClick={startNewGame} className="gap-1">
-              <RotateCcw className="h-4 w-4" />
-              New Game
-            </Button>
+            <Button onClick={startNewGame}>Start New Game</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Settings Panel */}
-      <SettingsPanel open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Game Settings</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <SettingsPanel open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="default">Done</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
+export default MainMenu; 

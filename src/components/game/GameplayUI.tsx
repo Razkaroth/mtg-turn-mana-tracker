@@ -1,33 +1,33 @@
 import React, { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, SkipForward } from "lucide-react";
-import { useGame } from '../../context/GameContext';
+import { ArrowRight, SkipForward, Ghost } from "lucide-react";
+import { useGameStore } from '@/stores/gameStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
+import { HelpTooltip } from '../ui/help-tooltip';
+import { PlayerData } from '@/types';
 import Player from '../player/Player';
 import ChessTimer from '../timer/ChessTimer';
 import PlayerSelector from '../player/PlayerSelector';
 import PhantomTurnBanner from './PhantomTurnBanner';
-import { PlayerData } from '../../types';
-import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
-import { HelpTooltip } from '../ui/help-tooltip';
 
 export const GameplayUI: React.FC = () => {
-  const { 
-    players, 
-    visiblePlayers,
-    activePlayerIndex, 
-    displayedPlayerIndex, 
-    timerRunning, 
-    removePlayer, 
-    updatePlayer, 
-    nextTurn, 
-    advancePhantomTurn,
-    setTimerRunning, 
-    setDisplayedPlayerIndex,
-    isSinglePlayerMode,
-    isPhantomPhase,
-    actualPlayerIndex
-  } = useGame();
+  // Get all the state and actions from the Zustand store
+  const players = useGameStore(state => state.players);
+  const phantomPlayers = useGameStore(state => state.phantomPlayers);
+  const activePlayerIndex = useGameStore(state => state.activePlayerIndex);
+  const displayedPlayerIndex = useGameStore(state => state.displayedPlayerIndex);
+  const timerRunning = useGameStore(state => state.timerRunning);
+  const isSinglePlayerMode = useGameStore(state => state.isSinglePlayerMode);
+  const isPhantomPhase = useGameStore(state => state.isPhantomPhase);
+  const actualPlayerIndex = useGameStore(state => state.actualPlayerIndex);
+  
+  // Get the actions from the Zustand store
+  const removePlayer = useGameStore(state => state.removePlayer);
+  const nextTurn = useGameStore(state => state.nextTurn);
+  const advancePhantomTurn = useGameStore(state => state.advancePhantomTurn);
+  const setTimerRunning = useGameStore(state => state.setTimerRunning);
+  const setDisplayedPlayerIndex = useGameStore(state => state.setDisplayedPlayerIndex);
   
   const activePlayer = players[activePlayerIndex];
   const displayedPlayer = players[displayedPlayerIndex];
@@ -248,38 +248,51 @@ export const GameplayUI: React.FC = () => {
               transition={{ duration: 0.25 }}
             >
               {isSinglePlayerMode ? (
-                <Player
-                  key={realPlayer.id}
-                  player={realPlayer}
+                <Player 
+                  playerId={realPlayer.id}
                   isActive={!isPhantomPhase}
-                  onUpdate={(updatedData: Partial<PlayerData>) => updatePlayer(realPlayer.id, updatedData)}
                   onRemove={() => removePlayer(realPlayer.id)}
                 />
               ) : (
-                <Player
-                  key={displayedPlayer.id}
-                  player={displayedPlayer}
-                  isActive={displayedPlayerIndex === activePlayerIndex}
-                  onUpdate={(updatedData: Partial<PlayerData>) => updatePlayer(displayedPlayer.id, updatedData)}
-                  onRemove={() => removePlayer(displayedPlayer.id)}
+                <Player 
+                  playerId={displayedPlayer.id}
+                  isActive={activePlayerIndex === displayedPlayerIndex}
+                  onRemove={players.length > 2 ? () => removePlayer(displayedPlayer.id) : () => {}}
                 />
               )}
             </motion.div>
           </AnimatePresence>
-        </div>
-      </div>
-      
-      {/* Fixed footer area for player selector */}
-      {!isSinglePlayerMode && (
-        <div className="flex-none fixed bottom-0 left-0 right-0 border-t border-border/30 bg-background/80 backdrop-blur-sm z-10">
+          
+          {/* Player selector */}
           <PlayerSelector
-            players={visiblePlayers}
-            displayedPlayerIndex={displayedPlayerIndex}
+            players={players}
+            selectedIndex={displayedPlayerIndex}
             activePlayerIndex={activePlayerIndex}
             onSelectPlayer={setDisplayedPlayerIndex}
           />
+          
+          {/* Phantom players for single player mode */}
+          {isSinglePlayerMode && phantomPlayers.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+                <Ghost className="h-3.5 w-3.5" />
+                Opponent Players
+              </h3>
+              <div className="space-y-2">
+                {phantomPlayers.map((player: PlayerData) => (
+                  <Player
+                    key={player.id}
+                    playerId={player.id}
+                    isActive={isPhantomPhase && activePlayerIndex === players.findIndex(p => p.id === player.id)}
+                    isMinimal={true}
+                    onRemove={() => removePlayer(player.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }; 
