@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, User } from 'lucide-react';
+import { ChevronDown, User, Eye } from 'lucide-react';
 import { PlayerData } from '@/types';
 
 interface PlayerSelectorProps {
@@ -9,22 +9,37 @@ interface PlayerSelectorProps {
   selectedIndex: number;
   activePlayerIndex: number;
   onSelectPlayer: (index: number) => void;
+  disabled?: boolean;
 }
 
 const PlayerSelector: React.FC<PlayerSelectorProps> = ({
   players,
   selectedIndex,
   activePlayerIndex,
-  onSelectPlayer
+  onSelectPlayer,
+  disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   
-  const toggleMenu = useCallback(() => setIsOpen(prev => !prev), []);
+  // Ensure selectedIndex is valid
+  const safeSelectedIndex = useMemo(() => {
+    return selectedIndex >= 0 && selectedIndex < players.length 
+      ? selectedIndex 
+      : 0;
+  }, [selectedIndex, players.length]);
+  
+  const toggleMenu = useCallback(() => {
+    if (!disabled) {
+      setIsOpen(prev => !prev);
+    }
+  }, [disabled]);
   
   const handleSelectPlayer = useCallback((index: number) => {
-    onSelectPlayer(index);
+    if (index !== selectedIndex) {
+      onSelectPlayer(index);
+    }
     setIsOpen(false);
-  }, [onSelectPlayer]);
+  }, [onSelectPlayer, selectedIndex]);
   
   // Memoize the player buttons to prevent unnecessary re-renders
   const playerButtons = useMemo(() => {
@@ -33,7 +48,7 @@ const PlayerSelector: React.FC<PlayerSelectorProps> = ({
         key={player.id}
         onClick={() => handleSelectPlayer(index)}
         className={`flex w-full items-center gap-2 px-3 py-2 text-sm ${
-          index === selectedIndex 
+          index === safeSelectedIndex 
             ? 'bg-primary/10 text-primary font-medium' 
             : 'hover:bg-muted/50'
         } ${
@@ -44,11 +59,16 @@ const PlayerSelector: React.FC<PlayerSelectorProps> = ({
         whileHover={{ x: 2 }}
         transition={{ duration: 0.1 }}
       >
-        <User className={`h-3.5 w-3.5 ${
-          index === activePlayerIndex 
-            ? 'text-primary' 
-            : 'text-muted-foreground'
-        }`} />
+        {index === safeSelectedIndex ? (
+          <Eye className="h-3.5 w-3.5 text-primary" />
+        ) : (
+          <User className={`h-3.5 w-3.5 ${
+            index === activePlayerIndex 
+              ? 'text-primary' 
+              : 'text-muted-foreground'
+          }`} />
+        )}
+        
         <span>{player.name}</span>
         
         {player.isPhantom && (
@@ -60,7 +80,7 @@ const PlayerSelector: React.FC<PlayerSelectorProps> = ({
         )}
       </motion.button>
     ));
-  }, [players, selectedIndex, activePlayerIndex, handleSelectPlayer]);
+  }, [players, safeSelectedIndex, activePlayerIndex, handleSelectPlayer]);
   
   // Render nothing if less than 2 players
   if (players.length < 2) return null;
@@ -70,11 +90,16 @@ const PlayerSelector: React.FC<PlayerSelectorProps> = ({
       <Button
         variant="outline"
         onClick={toggleMenu}
-        className="w-full bg-muted/50 justify-between text-sm items-center h-10 border-border/50"
+        disabled={disabled}
+        className={`w-full bg-muted/50 justify-between text-sm items-center h-10 border-border/50 ${
+          disabled ? 'opacity-70 cursor-not-allowed' : ''
+        }`}
       >
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">View Player:</span>
-          <span className="font-medium">{players[selectedIndex].name}</span>
+          <span className="font-medium">
+            {players[safeSelectedIndex]?.name || 'Select Player'}
+          </span>
         </div>
         <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </Button>

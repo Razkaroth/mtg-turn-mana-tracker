@@ -262,7 +262,7 @@ export const useGameStore = create<GameState>()((set, get) => {
     },
 
     removePlayer: (id) => {
-      const { players, activePlayerIndex } = get()
+      const { players, activePlayerIndex, displayedPlayerIndex } = get()
       
       // Find the index of the player to remove
       const playerIndex = players.findIndex((p: PlayerData) => p.id === id)
@@ -272,17 +272,25 @@ export const useGameStore = create<GameState>()((set, get) => {
       const newPlayers = [...players];
       newPlayers.splice(playerIndex, 1);
       
-      let newActivePlayerIndex = activePlayerIndex;
-      let newDisplayedPlayerIndex = get().displayedPlayerIndex;
+      // Ensure all indexes remain valid after removal
+      const newActivePlayerIndex = activePlayerIndex >= newPlayers.length 
+        ? Math.max(0, newPlayers.length - 1) 
+        : (playerIndex <= activePlayerIndex ? Math.max(0, activePlayerIndex - 1) : activePlayerIndex);
       
-      // Adjust active player index if needed
-      if (newPlayers.length > 0) {
-        // If active player was removed or is now out of bounds
-        if (activePlayerIndex >= newPlayers.length) {
-          newActivePlayerIndex = 0;
-          newDisplayedPlayerIndex = 0;
-        }
+      let newDisplayedPlayerIndex = displayedPlayerIndex;
+      
+      // If we're displaying the player that's being removed, change to display the active player
+      if (playerIndex === displayedPlayerIndex) {
+        newDisplayedPlayerIndex = newActivePlayerIndex;
+      } 
+      // If displayed player is after the removed player, adjust the index
+      else if (displayedPlayerIndex > playerIndex) {
+        newDisplayedPlayerIndex = Math.max(0, displayedPlayerIndex - 1);
       }
+      
+      // Ensure indexes are valid
+      newDisplayedPlayerIndex = Math.min(newDisplayedPlayerIndex, newPlayers.length - 1);
+      newDisplayedPlayerIndex = Math.max(0, newDisplayedPlayerIndex);
       
       set({
         players: newPlayers,

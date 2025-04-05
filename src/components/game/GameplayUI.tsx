@@ -29,9 +29,21 @@ export const GameplayUI: React.FC = () => {
   const setTimerRunning = useGameStore(state => state.setTimerRunning);
   const setDisplayedPlayerIndex = useGameStore(state => state.setDisplayedPlayerIndex);
   
-  const activePlayer = players[activePlayerIndex];
-  const displayedPlayer = players[displayedPlayerIndex];
-  const realPlayer = isSinglePlayerMode ? players[actualPlayerIndex] : players[displayedPlayerIndex];
+  // Ensure displayedPlayerIndex is valid when players change
+  useEffect(() => {
+    if (displayedPlayerIndex >= players.length) {
+      setDisplayedPlayerIndex(players.length > 0 ? 0 : 0);
+    }
+  }, [players.length, displayedPlayerIndex, setDisplayedPlayerIndex]);
+  
+  // Get the current players for display, ensuring valid indexes
+  const safeActivePlayerIndex = activePlayerIndex < players.length ? activePlayerIndex : 0;
+  const safeDisplayedPlayerIndex = displayedPlayerIndex < players.length ? displayedPlayerIndex : 0;
+  const safeActualPlayerIndex = actualPlayerIndex < players.length ? actualPlayerIndex : 0;
+  
+  const activePlayer = players[safeActivePlayerIndex] || { name: "No player", id: 0 };
+  const displayedPlayer = players[safeDisplayedPlayerIndex] || { name: "No player", id: 0 };
+  const realPlayer = isSinglePlayerMode ? players[safeActualPlayerIndex] : players[safeDisplayedPlayerIndex];
 
   // Show toast notification for phantom phase
   useEffect(() => {
@@ -54,8 +66,10 @@ export const GameplayUI: React.FC = () => {
       setTimerRunning(true);
     }
     
+    if (players.length === 0) return;
+    
     // Get the next player before calling nextTurn
-    const nextPlayerIndex = (activePlayerIndex + 1) % players.length;
+    const nextPlayerIndex = (safeActivePlayerIndex + 1) % players.length;
     const nextPlayer = players[nextPlayerIndex];
     
     // Only show notification if they have lands to tap
@@ -82,8 +96,10 @@ export const GameplayUI: React.FC = () => {
       setTimerRunning(true);
     }
 
+    if (players.length === 0) return;
+    
     // Get the real player before calling advancePhantomTurn
-    const realPlayer = players[actualPlayerIndex];
+    const realPlayer = players[safeActualPlayerIndex];
     
     // Only show notification if they have lands to tap
     if (realPlayer && realPlayer.lands.length > 0) {
@@ -101,6 +117,28 @@ export const GameplayUI: React.FC = () => {
     
     advancePhantomTurn();
   };
+
+  // Handle player selection - treat single player mode specially
+  const handleSelectPlayer = (index: number) => {
+    // In single player mode, only allow viewing phantom players (not the main player)
+    if (isSinglePlayerMode) {
+      // Allow viewing the actual player or phantom players, but don't change any other state
+      setDisplayedPlayerIndex(index);
+    } else {
+      // In normal mode, just update the displayed player index
+      setDisplayedPlayerIndex(index);
+    }
+  };
+
+  // In single player mode, determine what players should be selectable
+  const selectablePlayers = isSinglePlayerMode
+    ? [players[safeActualPlayerIndex], ...phantomPlayers] // Show real player first, then phantoms
+    : players;
+
+  // Which player index is currently selected in the selectable players array
+  const currentSelectedIndex = isSinglePlayerMode
+    ? (displayedPlayerIndex === actualPlayerIndex ? 0 : phantomPlayers.findIndex(p => p.id === displayedPlayer.id) + 1)
+    : displayedPlayerIndex;
 
   return (
     <div className="bg-background text-foreground h-full flex flex-col">
@@ -163,7 +201,7 @@ export const GameplayUI: React.FC = () => {
         <div className="max-w-sm mx-auto">
           <ChessTimer 
             players={players} 
-            activePlayerIndex={activePlayerIndex} 
+            activePlayerIndex={safeActivePlayerIndex} 
             running={timerRunning}
             onTurnEnd={handleNextTurn}
             setTimerRunning={setTimerRunning}
@@ -241,7 +279,7 @@ export const GameplayUI: React.FC = () => {
           {/* Player component - always visible in single player mode */}
           <AnimatePresence mode="wait">
             <motion.div
-              key={isSinglePlayerMode ? realPlayer.id : displayedPlayer.id}
+              key={isSinglePlayerMode ? realPlayer?.id : displayedPlayer?.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -249,15 +287,15 @@ export const GameplayUI: React.FC = () => {
             >
               {isSinglePlayerMode ? (
                 <Player 
-                  playerId={realPlayer.id}
+                  playerId={realPlayer?.id}
                   isActive={!isPhantomPhase}
-                  onRemove={() => removePlayer(realPlayer.id)}
+                  onRemove={() => realPlayer?.id && removePlayer(realPlayer.id)}
                 />
               ) : (
                 <Player 
-                  playerId={displayedPlayer.id}
-                  isActive={activePlayerIndex === displayedPlayerIndex}
-                  onRemove={players.length > 2 ? () => removePlayer(displayedPlayer.id) : () => {}}
+                  playerId={displayedPlayer?.id}
+                  isActive={safeActivePlayerIndex === safeDisplayedPlayerIndex}
+                  onRemove={players.length > 2 && displayedPlayer?.id ? () => removePlayer(displayedPlayer.id) : () => {}}
                 />
               )}
             </motion.div>
@@ -265,14 +303,14 @@ export const GameplayUI: React.FC = () => {
           
           {/* Player selector */}
           <PlayerSelector
-            players={players}
-            selectedIndex={displayedPlayerIndex}
-            activePlayerIndex={activePlayerIndex}
-            onSelectPlayer={setDisplayedPlayerIndex}
+            players={selectablePlayers}
+            selectedIndex={currentSelectedIndex}
+            activePlayerIndex={safeActivePlayerIndex}
+            onSelectPlayer={handleSelectPlayer}
           />
           
           {/* Phantom players for single player mode */}
-          {isSinglePlayerMode && phantomPlayers.length > 0 && (
+          {isSinglePlayerMode && displayedPlayerIndex === actualPlayerIndex && phantomPlayers.length > 0 && (
             <div className="mt-6">
               <h3 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
                 <Ghost className="h-3.5 w-3.5" />
@@ -283,9 +321,9 @@ export const GameplayUI: React.FC = () => {
                   <Player
                     key={player.id}
                     playerId={player.id}
-                    isActive={isPhantomPhase && activePlayerIndex === players.findIndex(p => p.id === player.id)}
+                    isActive={isPhantomPhase && safeActivePlayerIndex === players.findIndex(p => p.id === player.id)}
                     isMinimal={true}
-                    onRemove={() => removePlayer(player.id)}
+                    onRemove={() => player.id && removePlayer(player.id)}
                   />
                 ))}
               </div>
