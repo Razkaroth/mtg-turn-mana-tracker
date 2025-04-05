@@ -46,7 +46,7 @@ const LAND_TYPES: LandDisplay[] = [
   { type: 'Swamp', produces: 'B', symbol: '💀', bgClassName: 'bg-gradient-to-b from-neutral-100 to-neutral-200/70', iconColor: 'text-neutral-700' },
   { type: 'Mountain', produces: 'R', symbol: '🔥', bgClassName: 'bg-gradient-to-b from-red-50 to-red-100/70', iconColor: 'text-red-600' },
   { type: 'Forest', produces: 'G', symbol: '🌳', bgClassName: 'bg-gradient-to-b from-green-50 to-green-100/70', iconColor: 'text-green-600' },
-  { type: 'Wastes', produces: 'C', symbol: '💎', bgClassName: 'bg-gradient-to-b from-purple-50 to-purple-100/70', iconColor: 'text-purple-600' }
+  { type: 'Wastes', produces: 'C', symbol: '💠', bgClassName: 'bg-gradient-to-b from-purple-50 to-purple-100/70', iconColor: 'text-purple-600' }
 ];
 
 const Player: React.FC<PlayerProps> = ({ 
